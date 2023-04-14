@@ -3,8 +3,14 @@ package com.github.mvysny.unsigned
 import com.github.mvysny.dynatest.DynaTest
 import kotlin.test.expect
 
-fun expect4(expectedHex: String, block: (ByteArray) -> Unit) {
+private fun expect4(expectedHex: String, block: (ByteArray) -> Unit) {
     val bytes = ByteArray(4)
+    block(bytes)
+    expect(expectedHex) { bytes.toHex() }
+}
+
+private fun expect6(expectedHex: String, block: (ByteArray) -> Unit) {
+    val bytes = ByteArray(6)
     block(bytes)
     expect(expectedHex) { bytes.toHex() }
 }
@@ -95,6 +101,17 @@ class EndianTest : DynaTest({
                 expect(0xdeadbeef.toInt()) { e.getInt("00deadbeef".fromHex(), 1) }
             }
         }
+        group("setInt()") {
+            test("0") {
+                expect6("000000000000") { e.setInt(it, 1, 0) }
+            }
+            test("0x01020304") {
+                expect6("000102030400") { e.setInt(it, 1, 0x01020304) }
+            }
+            test("0xdeadbeef") {
+                expect6("00deadbeef00") { e.setInt(it, 1, 0xdeadbeef.toInt()) }
+            }
+        }
     }
     group("Little") {
         val e = Endian.Little
@@ -179,6 +196,17 @@ class EndianTest : DynaTest({
             }
             test("0xdeadbeef") {
                 expect(0xefbeadde.toInt()) { e.getInt("00deadbeef".fromHex(), 1) }
+            }
+        }
+        group("setInt()") {
+            test("0") {
+                expect6("000000000000") { e.setInt(it, 1, 0) }
+            }
+            test("0x01020304") {
+                expect6("000403020100") { e.setInt(it, 1, 0x01020304) }
+            }
+            test("0xdeadbeef") {
+                expect6("00efbeadde00") { e.setInt(it, 1, 0xdeadbeef.toInt()) }
             }
         }
     }

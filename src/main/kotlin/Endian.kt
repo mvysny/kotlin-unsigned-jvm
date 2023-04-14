@@ -20,6 +20,13 @@ public enum class Endian {
                         (bytes[byteOffset + 1].toUByte().toUInt() shl 16) +
                         (bytes[byteOffset + 2].toUByte().toUInt() shl 8) +
                         bytes[byteOffset + 3].toUByte()).toInt()
+
+        override fun setInt(bytes: ByteArray, byteOffset: Int, value: Int) {
+            bytes[byteOffset] = (value ushr 24).toByte()
+            bytes[byteOffset + 1] = (value ushr 16).toByte()
+            bytes[byteOffset + 2] = (value ushr 8).toByte()
+            bytes[byteOffset + 3] = value.toByte()
+        }
     },
     Little {
         override fun getShort(
@@ -37,6 +44,13 @@ public enum class Endian {
                         (bytes[byteOffset + 2].toUByte().toUInt() shl 16) +
                         (bytes[byteOffset + 1].toUByte().toUInt() shl 8) +
                         bytes[byteOffset].toUByte()).toInt()
+
+        override fun setInt(bytes: ByteArray, byteOffset: Int, value: Int) {
+            bytes[byteOffset + 3] = (value ushr 24).toByte()
+            bytes[byteOffset + 2] = (value ushr 16).toByte()
+            bytes[byteOffset + 1] = (value ushr 8).toByte()
+            bytes[byteOffset] = value.toByte()
+        }
     };
 
     /**
@@ -122,4 +136,17 @@ public enum class Endian {
     * `byteOffset + 4` must be less than or equal to the length of this object.
      */
     public abstract fun getInt(bytes: ByteArray, byteOffset: Int): Int
+
+    /**
+     * Sets the four bytes starting at the specified [byteOffset] in this
+     * object to the two's complement binary representation of the specified
+     * [value], which must fit in four bytes.
+     *
+     * In other words, [value] must lie
+     * between -2^31 and 2^31 - 1, inclusive.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 4` must be less than or equal to the length of this object.
+     */
+    public abstract fun setInt(bytes: ByteArray, byteOffset: Int, value: Int)
 }
