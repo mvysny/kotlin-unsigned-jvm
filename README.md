@@ -27,3 +27,20 @@ The `endian` value always defaults to `Endian.big`. Supports both `Endian.Little
 The library is in Maven Central. The usage is very simple, just add this to your `build.gradle`:
 
 TODO
+
+## Releasing
+
+To release the library to Maven Central:
+
+1. Edit `build.gradle.kts` and remove `-SNAPSHOT` in the `version=` stanza
+2. Commit with the commit message of simply being the version being released, e.g. "1.2.13"
+3. git tag the commit with the same tag name as the commit message above, e.g. `1.2.13`
+4. `git push`, `git push --tags`
+5. Run `./gradlew clean build publish`
+6. Continue to the [OSSRH Nexus](https://oss.sonatype.org/#stagingRepositories) and follow the [release procedure](https://central.sonatype.org/pages/releasing-the-deployment.html).
+7. Add the `-SNAPSHOT` back to the `version=` while increasing the version to something which will be released in the future,
+   e.g. 1.2.14, then commit with the commit message "1.2.14-SNAPSHOT" and push.
+
+# License
+
+See [LICENSE](LICENSE)
