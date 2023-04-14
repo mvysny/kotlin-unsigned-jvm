@@ -26,7 +26,14 @@ The `endian` value always defaults to `Endian.big`. Supports both `Endian.Little
 
 The library is in Maven Central. The usage is very simple, just add this to your `build.gradle`:
 
-TODO
+```groovy
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile("com.gitlab.mvysny.kotlin-unsigned-jvm:kotlin-unsigned-jvm:0.1")
+}
+```
 
 ## Releasing
 
