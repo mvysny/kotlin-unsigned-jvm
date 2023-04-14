@@ -212,3 +212,17 @@ public inline fun ByteArray.getUInt(byteOffset: Int, endian: Endian = Endian.Big
 public inline fun ByteArray.setUInt(byteOffset: Int, value: UInt, endian: Endian = Endian.Big) {
     endian.setUInt(this, byteOffset, value)
 }
+
+
+/**
+ * Returns the (possibly negative) integer represented by the eight bytes at
+ * the specified [byteOffset] in this object, in two's complement binary
+ * form.
+ *
+ * The return value will be between -2^63 and 2^63 - 1,
+ * inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 8` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getLong(byteOffset: Int, endian: Endian = Endian.Big): Long = endian.getLong(this, byteOffset)
