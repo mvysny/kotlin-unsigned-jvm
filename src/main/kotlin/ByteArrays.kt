@@ -253,3 +253,18 @@ public inline fun ByteArray.setLong(byteOffset: Int, value: Long, endian: Endian
  * `byteOffset + 8` must be less than or equal to the length of this object.
  */
 public inline fun ByteArray.getULong(byteOffset: Int, endian: Endian = Endian.Big): ULong = endian.getULong(this, byteOffset)
+
+/**
+ * Sets the eight bytes starting at the specified [byteOffset] in this object
+ * to the unsigned binary representation of the specified [value],
+ * which must fit in eight bytes.
+ *
+ * In other words, [value] must be between
+ * 0 and 2^64 - 1, inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 8` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.setULong(byteOffset: Int, value: ULong, endian: Endian = Endian.Big) {
+    endian.setULong(this, byteOffset, value)
+}
