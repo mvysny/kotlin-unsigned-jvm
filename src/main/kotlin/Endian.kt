@@ -39,6 +39,17 @@ public enum class Endian {
                         (bytes[byteOffset + 5].toUByte().toULong() shl 16) +
                         (bytes[byteOffset + 6].toUByte().toULong() shl 8) +
                         bytes[byteOffset + 7].toUByte()).toLong()
+
+        override fun setLong(bytes: ByteArray, byteOffset: Int, value: Long) {
+            bytes[byteOffset] = (value ushr 56).toByte()
+            bytes[byteOffset + 1] = (value ushr 48).toByte()
+            bytes[byteOffset + 2] = (value ushr 40).toByte()
+            bytes[byteOffset + 3] = (value ushr 32).toByte()
+            bytes[byteOffset + 4] = (value ushr 24).toByte()
+            bytes[byteOffset + 5] = (value ushr 16).toByte()
+            bytes[byteOffset + 6] = (value ushr 8).toByte()
+            bytes[byteOffset + 7] = value.toByte()
+        }
     },
     Little {
         override fun getShort(
@@ -73,6 +84,17 @@ public enum class Endian {
                         (bytes[byteOffset + 2].toUByte().toULong() shl 16) +
                         (bytes[byteOffset + 1].toUByte().toULong() shl 8) +
                         bytes[byteOffset].toUByte()).toLong()
+
+        override fun setLong(bytes: ByteArray, byteOffset: Int, value: Long) {
+            bytes[byteOffset + 7] = (value ushr 56).toByte()
+            bytes[byteOffset + 6] = (value ushr 48).toByte()
+            bytes[byteOffset + 5] = (value ushr 40).toByte()
+            bytes[byteOffset + 4] = (value ushr 32).toByte()
+            bytes[byteOffset + 3] = (value ushr 24).toByte()
+            bytes[byteOffset + 2] = (value ushr 16).toByte()
+            bytes[byteOffset + 1] = (value ushr 8).toByte()
+            bytes[byteOffset] = value.toByte()
+        }
     };
 
     /**
@@ -211,4 +233,17 @@ public enum class Endian {
     * `byteOffset + 8` must be less than or equal to the length of this object.
      */
     public abstract fun getLong(bytes: ByteArray, byteOffset: Int): Long
+
+    /**
+    * Sets the eight bytes starting at the specified [byteOffset] in this
+    * object to the two's complement binary representation of the specified
+    * [value], which must fit in eight bytes.
+    *
+    * In other words, [value] must lie
+    * between -2^63 and 2^63 - 1, inclusive.
+    *
+    * The [byteOffset] must be non-negative, and
+    * `byteOffset + 8` must be less than or equal to the length of this object.
+     */
+    public abstract fun setLong(bytes: ByteArray, byteOffset: Int, value: Long)
 }

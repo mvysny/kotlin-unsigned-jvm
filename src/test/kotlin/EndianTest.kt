@@ -148,7 +148,18 @@ class EndianTest : DynaTest({
                 expect(0x0102030405060708) { e.getLong("00010203040506070800".fromHex(), 1) }
             }
             test("0xdeadbeefaabbccdd") {
-                expect("deadbeefaabbccdd".toULong(16).toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
+                expect(deadbeefaabbccdd.toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
+            }
+        }
+        group("setLong()") {
+            test("0") {
+                expect10("00000000000000000000") { e.setLong(it, 1, 0) }
+            }
+            test("0x0102030405060708") {
+                expect10("00010203040506070800") { e.setLong(it, 1, 0x0102030405060708L) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                expect10("00deadbeefaabbccdd00") { e.setLong(it, 1, deadbeefaabbccdd.toLong()) }
             }
         }
     }
@@ -278,9 +289,23 @@ class EndianTest : DynaTest({
                 expect(0x0807060504030201) { e.getLong("00010203040506070800".fromHex(), 1) }
             }
             test("0xdeadbeefaabbccdd") {
-                // workaround for https://youtrack.jetbrains.com/issue/KT-4749
-                expect("ddccbbaaefbeadde".toULong(16).toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
+                expect(ddccbbaaefbeadde.toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
+            }
+        }
+        group("setLong()") {
+            test("0") {
+                expect10("00000000000000000000") { e.setLong(it, 1, 0) }
+            }
+            test("0x0102030405060708") {
+                expect10("00080706050403020100") { e.setLong(it, 1, 0x0102030405060708L) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                expect10("00ddccbbaaefbeadde00") { e.setLong(it, 1, deadbeefaabbccdd.toLong()) }
             }
         }
     }
 })
+
+// workaround for https://youtrack.jetbrains.com/issue/KT-4749
+private val deadbeefaabbccdd = "deadbeefaabbccdd".toULong(16)
+private val ddccbbaaefbeadde = "ddccbbaaefbeadde".toULong(16)
