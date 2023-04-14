@@ -246,4 +246,16 @@ public enum class Endian {
     * `byteOffset + 8` must be less than or equal to the length of this object.
      */
     public abstract fun setLong(bytes: ByteArray, byteOffset: Int, value: Long)
+
+    /**
+    * Returns the positive integer represented by the eight bytes starting
+    * at the specified [byteOffset] in this object, in unsigned binary
+    * form.
+    *
+    * The return value will be between 0 and  2<sup>64</sup> - 1, inclusive.
+    *
+    * The [byteOffset] must be non-negative, and
+    * `byteOffset + 8` must be less than or equal to the length of this object.
+     */
+    public inline fun getULong(bytes: ByteArray, byteOffset: Int): ULong = getLong(bytes, byteOffset).toULong()
 }

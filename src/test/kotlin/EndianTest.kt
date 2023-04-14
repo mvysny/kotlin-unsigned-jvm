@@ -162,6 +162,17 @@ class EndianTest : DynaTest({
                 expect10("00deadbeefaabbccdd00") { e.setLong(it, 1, deadbeefaabbccdd.toLong()) }
             }
         }
+        group("getULong()") {
+            test("0") {
+                expect(0.toULong()) { e.getULong("00000000000000000000".fromHex(), 1) }
+            }
+            test("0x0102030405060708") {
+                expect(0x0102030405060708.toULong()) { e.getULong("00010203040506070800".fromHex(), 1) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                expect(deadbeefaabbccdd) { e.getULong("00deadbeefaabbccdd".fromHex(), 1) }
+            }
+        }
     }
     group("Little") {
         val e = Endian.Little
@@ -301,6 +312,17 @@ class EndianTest : DynaTest({
             }
             test("0xdeadbeefaabbccdd") {
                 expect10("00ddccbbaaefbeadde00") { e.setLong(it, 1, deadbeefaabbccdd.toLong()) }
+            }
+        }
+        group("getULong()") {
+            test("0") {
+                expect(0.toULong()) { e.getULong("00000000000000000000".fromHex(), 1) }
+            }
+            test("0x0102030405060708") {
+                expect(0x0807060504030201.toULong()) { e.getULong("00010203040506070800".fromHex(), 1) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                expect(ddccbbaaefbeadde) { e.getULong("00deadbeefaabbccdd".fromHex(), 1) }
             }
         }
     }
