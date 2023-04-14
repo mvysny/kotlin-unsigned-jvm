@@ -35,6 +35,14 @@ dependencies {
 }
 ```
 
+## Motivation
+
+Why yet another library when you can use `DataInputStream.read*()` and `DataOutputStream.write*()` functions?
+Two reasons:
+
+* Those classes do not support unsigned Kotlin types directly;
+* Those classes always use `Endian.Big`.
+
 ## Releasing
 
 To release the library to Maven Central:
