@@ -63,6 +63,18 @@ public enum class Endian {
     public abstract fun setShort(bytes: ByteArray, byteOffset: Int, value: Int)
 
     /**
+     * Returns the positive integer represented by the two bytes starting
+     * at the specified [byteOffset] in this object, in unsigned binary
+     * form.
+     *
+     * The return value will be between 0 and  2^16 - 1, inclusive.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 2` must be less than or equal to the length of this object.
+     */
+    public fun getUShort(bytes: ByteArray, byteOffset: Int): UShort = getShort(bytes, byteOffset).toUShort()
+
+    /**
      * Sets the two bytes starting at the specified [byteOffset] in this
      * object to the two's complement binary representation of the specified
      * [value].

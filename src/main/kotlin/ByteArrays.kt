@@ -98,7 +98,7 @@ public inline fun ByteArray.setShort(byteOffset: Int, value: Short, endian: Endi
  * the specified [byteOffset] in this object, in two's complement binary
  * form.
  *
- * The return value will be between -2<sup>15</sup> and 2<sup>15</sup> - 1,
+ * The return value will be between -2^15 and 2^15 - 1,
  * inclusive.
  *
  * The [byteOffset] must be non-negative, and
@@ -120,6 +120,18 @@ public inline fun ByteArray.getShort(
 public inline fun ByteArray.setShort(byteOffset: Int, value: Int, endian: Endian = Endian.Big) {
     endian.setShort(this, byteOffset, value)
 }
+
+/**
+* Returns the positive integer represented by the two bytes starting
+* at the specified [byteOffset] in this object, in unsigned binary
+* form.
+*
+* The return value will be between 0 and  2^16 - 1, inclusive.
+*
+* The [byteOffset] must be non-negative, and
+* `byteOffset + 2` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getUShort(byteOffset: Int, endian: Endian = Endian.Big): UShort = endian.getUShort(this, byteOffset)
 
 /**
  * Sets the two bytes starting at the specified [byteOffset] in this
