@@ -24,6 +24,9 @@ class ByteArrayTest : DynaTest({
             setUShort(1, 0.toUInt(), Endian.Little)
             setUShort(1, 0.toUShort())
             setUShort(1, 0.toUShort(), Endian.Little)
+
+            getInt(1)
+            getInt(1, Endian.Little)
         }
     }
 })

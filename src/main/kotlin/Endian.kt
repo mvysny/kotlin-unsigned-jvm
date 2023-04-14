@@ -115,7 +115,7 @@ public enum class Endian {
     * the specified [byteOffset] in this object, in two's complement binary
     * form.
     *
-    * The return value will be between -2<sup>31</sup> and 2<sup>31</sup> - 1,
+    * The return value will be between -2^31 and 2^31 - 1,
     * inclusive.
     *
     * The [byteOffset] must be non-negative, and

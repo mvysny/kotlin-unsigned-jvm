@@ -156,3 +156,17 @@ public inline fun ByteArray.setUShort(byteOffset: Int, value: UShort, endian: En
 public inline fun ByteArray.setUShort(byteOffset: Int, value: UInt, endian: Endian = Endian.Big) {
     endian.setUShort(this, byteOffset, value)
 }
+
+
+/**
+ * Returns the (possibly negative) integer represented by the four bytes at
+ * the specified [byteOffset] in this object, in two's complement binary
+ * form.
+ *
+ * The return value will be between -2^31 and 2^31 - 1,
+ * inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 4` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getInt(byteOffset: Int, endian: Endian = Endian.Big): Int = endian.getInt(this, byteOffset)
