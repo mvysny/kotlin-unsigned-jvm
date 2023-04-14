@@ -185,3 +185,16 @@ public inline fun ByteArray.getInt(byteOffset: Int, endian: Endian = Endian.Big)
 public inline fun ByteArray.setInt(byteOffset: Int, value: Int, endian: Endian = Endian.Big) {
     endian.setInt(this, byteOffset, value)
 }
+
+
+/**
+ * Returns the positive integer represented by the four bytes starting
+ * at the specified [byteOffset] in this object, in unsigned binary
+ * form.
+ *
+ * The return value will be between 0 and  2^32 - 1, inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 4` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getUInt(byteOffset: Int, endian: Endian = Endian.Big): UInt = endian.getUInt(this, byteOffset)
