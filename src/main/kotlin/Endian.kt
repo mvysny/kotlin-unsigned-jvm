@@ -29,6 +29,16 @@ public enum class Endian {
             bytes[byteOffset + 2] = (value ushr 8).toByte()
             bytes[byteOffset + 3] = value.toByte()
         }
+
+        override fun getLong(bytes: ByteArray, byteOffset: Int): Long = (
+                (bytes[byteOffset].toUByte().toULong() shl 56) +
+                        (bytes[byteOffset + 1].toUByte().toULong() shl 48) +
+                        (bytes[byteOffset + 2].toUByte().toULong() shl 40) +
+                        (bytes[byteOffset + 3].toUByte().toULong() shl 32) +
+                        (bytes[byteOffset + 4].toUByte().toULong() shl 24) +
+                        (bytes[byteOffset + 5].toUByte().toULong() shl 16) +
+                        (bytes[byteOffset + 6].toUByte().toULong() shl 8) +
+                        bytes[byteOffset + 7].toUByte()).toLong()
     },
     Little {
         override fun getShort(
@@ -53,6 +63,16 @@ public enum class Endian {
             bytes[byteOffset + 1] = (value ushr 8).toByte()
             bytes[byteOffset] = value.toByte()
         }
+
+        override fun getLong(bytes: ByteArray, byteOffset: Int): Long = (
+                (bytes[byteOffset + 7].toUByte().toULong() shl 56) +
+                        (bytes[byteOffset + 6].toUByte().toULong() shl 48) +
+                        (bytes[byteOffset + 5].toUByte().toULong() shl 40) +
+                        (bytes[byteOffset + 4].toUByte().toULong() shl 32) +
+                        (bytes[byteOffset + 3].toUByte().toULong() shl 24) +
+                        (bytes[byteOffset + 2].toUByte().toULong() shl 16) +
+                        (bytes[byteOffset + 1].toUByte().toULong() shl 8) +
+                        bytes[byteOffset].toUByte()).toLong()
     };
 
     /**
@@ -178,4 +198,17 @@ public enum class Endian {
     public inline fun setUInt(bytes: ByteArray, byteOffset: Int, value: UInt) {
         setInt(bytes, byteOffset, value.toInt())
     }
+
+    /**
+    * Returns the (possibly negative) integer represented by the eight bytes at
+    * the specified [byteOffset] in this object, in two's complement binary
+    * form.
+    *
+    * The return value will be between -2^63 and 2^63 - 1,
+    * inclusive.
+    *
+    * The [byteOffset] must be non-negative, and
+    * `byteOffset + 8` must be less than or equal to the length of this object.
+     */
+    public abstract fun getLong(bytes: ByteArray, byteOffset: Int): Long
 }

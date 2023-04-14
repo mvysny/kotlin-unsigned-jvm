@@ -15,6 +15,12 @@ private fun expect6(expectedHex: String, block: (ByteArray) -> Unit) {
     expect(expectedHex) { bytes.toHex() }
 }
 
+private fun expect10(expectedHex: String, block: (ByteArray) -> Unit) {
+    val bytes = ByteArray(10)
+    block(bytes)
+    expect(expectedHex) { bytes.toHex() }
+}
+
 class EndianTest : DynaTest({
     group("Big") {
         val e = Endian.Big
@@ -134,6 +140,17 @@ class EndianTest : DynaTest({
                 expect6("00deadbeef00") { e.setUInt(it, 1, 0xdeadbeef.toUInt()) }
             }
         }
+        group("getLong()") {
+            test("0") {
+                expect(0) { e.getLong("00000000000000000000".fromHex(), 1) }
+            }
+            test("0x0102030405060708") {
+                expect(0x0102030405060708) { e.getLong("00010203040506070800".fromHex(), 1) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                expect("deadbeefaabbccdd".toULong(16).toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
+            }
+        }
     }
     group("Little") {
         val e = Endian.Little
@@ -251,6 +268,18 @@ class EndianTest : DynaTest({
             }
             test("0xdeadbeef") {
                 expect6("00efbeadde00") { e.setUInt(it, 1, 0xdeadbeef.toUInt()) }
+            }
+        }
+        group("getLong()") {
+            test("0") {
+                expect(0) { e.getLong("00000000000000000000".fromHex(), 1) }
+            }
+            test("0x0102030405060708") {
+                expect(0x0807060504030201) { e.getLong("00010203040506070800".fromHex(), 1) }
+            }
+            test("0xdeadbeefaabbccdd") {
+                // workaround for https://youtrack.jetbrains.com/issue/KT-4749
+                expect("ddccbbaaefbeadde".toULong(16).toLong()) { e.getLong("00deadbeefaabbccdd".fromHex(), 1) }
             }
         }
     }
