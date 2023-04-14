@@ -15,6 +15,10 @@ functions:
 * `ByteArray.setInt(byteOffset, value, endian)`
 * `ByteArray.getUInt(byteOffset, value, endian)`
 * `ByteArray.setUInt(byteOffset, value, endian)`
+* `ByteArray.getLong(byteOffset, value, endian)`
+* `ByteArray.setLong(byteOffset, value, endian)`
+* `ByteArray.getULong(byteOffset, value, endian)`
+* `ByteArray.setULong(byteOffset, value, endian)`
 
 The `endian` value always defaults to `Endian.big`. Supports both `Endian.Little` and `Endian.Big`.
 
