@@ -48,6 +48,16 @@ What about Kotlin's built-in [ByteArray.setUIntAt()](https://kotlinlang.org/api/
 * It's only for Kotlin/Native, it's not available in Kotlin/JVM
 * The endianness is undocumented, which is a big issue.
 
+Why not using Java built-in `ByteBuffer` as follows:
+
+```java
+ByteBuffer buffer = ByteBuffer.wrap(new byte[10]);
+buffer.order(ByteOrder.LITTLE_ENDIAN);
+buffer.getLong().toULong();
+```
+
+Yeah.... that also works. Yet, I'd argue that working with `ByteArray` and indexes is simpler than with a `ByteBuffer` with a pointer.
+
 ## Releasing
 
 To release the library to Maven Central:
