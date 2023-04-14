@@ -170,3 +170,18 @@ public inline fun ByteArray.setUShort(byteOffset: Int, value: UInt, endian: Endi
  * `byteOffset + 4` must be less than or equal to the length of this object.
  */
 public inline fun ByteArray.getInt(byteOffset: Int, endian: Endian = Endian.Big): Int = endian.getInt(this, byteOffset)
+
+/**
+ * Sets the four bytes starting at the specified [byteOffset] in this
+ * object to the two's complement binary representation of the specified
+ * [value], which must fit in four bytes.
+ *
+ * In other words, [value] must lie
+ * between -2^31 and 2^31 - 1, inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 4` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.setInt(byteOffset: Int, value: Int, endian: Endian = Endian.Big) {
+    endian.setInt(this, byteOffset, value)
+}
