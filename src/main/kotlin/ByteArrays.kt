@@ -247,7 +247,7 @@ public inline fun ByteArray.setLong(byteOffset: Int, value: Long, endian: Endian
  * at the specified [byteOffset] in this object, in unsigned binary
  * form.
  *
- * The return value will be between 0 and  2<sup>64</sup> - 1, inclusive.
+ * The return value will be between 0 and  2^64 - 1, inclusive.
  *
  * The [byteOffset] must be non-negative, and
  * `byteOffset + 8` must be less than or equal to the length of this object.

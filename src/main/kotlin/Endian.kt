@@ -252,10 +252,25 @@ public enum class Endian {
     * at the specified [byteOffset] in this object, in unsigned binary
     * form.
     *
-    * The return value will be between 0 and  2<sup>64</sup> - 1, inclusive.
+    * The return value will be between 0 and  2^64 - 1, inclusive.
     *
     * The [byteOffset] must be non-negative, and
     * `byteOffset + 8` must be less than or equal to the length of this object.
      */
     public inline fun getULong(bytes: ByteArray, byteOffset: Int): ULong = getLong(bytes, byteOffset).toULong()
+
+    /**
+    * Sets the eight bytes starting at the specified [byteOffset] in this object
+    * to the unsigned binary representation of the specified [value],
+    * which must fit in eight bytes.
+    *
+    * In other words, [value] must be between
+    * 0 and 2^64 - 1, inclusive.
+    *
+    * The [byteOffset] must be non-negative, and
+    * `byteOffset + 8` must be less than or equal to the length of this object.
+     */
+    public inline fun setULong(bytes: ByteArray, byteOffset: Int, value: ULong) {
+        setLong(bytes, byteOffset, value.toLong())
+    }
 }
