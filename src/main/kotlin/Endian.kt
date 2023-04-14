@@ -75,9 +75,9 @@ public enum class Endian {
     public fun getUShort(bytes: ByteArray, byteOffset: Int): UShort = getShort(bytes, byteOffset).toUShort()
 
     /**
-     * Sets the two bytes starting at the specified [byteOffset] in this
-     * object to the two's complement binary representation of the specified
-     * [value].
+     * Sets the two bytes starting at the specified [byteOffset] in this object
+     * to the unsigned binary representation of the specified [value],
+     * which must fit in two bytes.
      *
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of [bytes].
@@ -87,9 +87,9 @@ public enum class Endian {
     }
 
     /**
-     * Sets the two bytes starting at the specified [byteOffset] in this
-     * object to the two's complement binary representation of the specified
-     * [value]. Only the lowest 16 bits are considered, high 16 bits are ignored.
+     * Sets the two bytes starting at the specified [byteOffset] in this object
+     * to the unsigned binary representation of the specified [value],
+     * which must fit in two bytes.
      *
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of [bytes].

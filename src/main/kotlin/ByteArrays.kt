@@ -134,9 +134,9 @@ public inline fun ByteArray.setShort(byteOffset: Int, value: Int, endian: Endian
 public inline fun ByteArray.getUShort(byteOffset: Int, endian: Endian = Endian.Big): UShort = endian.getUShort(this, byteOffset)
 
 /**
- * Sets the two bytes starting at the specified [byteOffset] in this
- * object to the two's complement binary representation of the specified
- * [value].
+ * Sets the two bytes starting at the specified [byteOffset] in this object
+ * to the unsigned binary representation of the specified [value],
+ * which must fit in two bytes.
  *
  * The [byteOffset] must be non-negative, and
  * `byteOffset + 2` must be less than or equal to the length of [bytes].
@@ -146,9 +146,9 @@ public inline fun ByteArray.setUShort(byteOffset: Int, value: UShort, endian: En
 }
 
 /**
- * Sets the two bytes starting at the specified [byteOffset] in this
- * object to the two's complement binary representation of the specified
- * [value]. Only the lowest 16 bits are considered, high 16 bits are ignored.
+ * Sets the two bytes starting at the specified [byteOffset] in this object
+ * to the unsigned binary representation of the specified [value],
+ * which must fit in two bytes.
  *
  * The [byteOffset] must be non-negative, and
  * `byteOffset + 2` must be less than or equal to the length of [bytes].
