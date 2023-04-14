@@ -43,6 +43,11 @@ Two reasons:
 * Those classes do not support unsigned Kotlin types directly;
 * Those classes always use `Endian.Big`.
 
+What about Kotlin's built-in [ByteArray.setUIntAt()](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.native/set-u-int-at.html)?
+
+* It's only for Kotlin/Native, it's not available in Kotlin/JVM
+* The endianness is undocumented, which is a big issue.
+
 ## Releasing
 
 To release the library to Maven Central:
