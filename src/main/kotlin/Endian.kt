@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.github.mvysny.unsigned
 
 /**
@@ -74,7 +76,7 @@ public enum class Endian {
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of [bytes].
      */
-    public fun setShort(bytes: ByteArray, byteOffset: Int, value: Short) {
+    public inline fun setShort(bytes: ByteArray, byteOffset: Int, value: Short) {
         setShort(bytes, byteOffset, value.toInt())
     }
 
@@ -98,7 +100,7 @@ public enum class Endian {
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of this object.
      */
-    public fun getUShort(bytes: ByteArray, byteOffset: Int): UShort = getShort(bytes, byteOffset).toUShort()
+    public inline fun getUShort(bytes: ByteArray, byteOffset: Int): UShort = getShort(bytes, byteOffset).toUShort()
 
     /**
      * Sets the two bytes starting at the specified [byteOffset] in this object
@@ -108,7 +110,7 @@ public enum class Endian {
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of [bytes].
      */
-    public fun setUShort(bytes: ByteArray, byteOffset: Int, value: UShort) {
+    public inline fun setUShort(bytes: ByteArray, byteOffset: Int, value: UShort) {
         setShort(bytes, byteOffset, value.toShort());
     }
 
@@ -120,7 +122,7 @@ public enum class Endian {
      * The [byteOffset] must be non-negative, and
      * `byteOffset + 2` must be less than or equal to the length of [bytes].
      */
-    public fun setUShort(bytes: ByteArray, byteOffset: Int, value: UInt) {
+    public inline fun setUShort(bytes: ByteArray, byteOffset: Int, value: UInt) {
         setShort(bytes, byteOffset, value.toShort())
     }
 
@@ -149,4 +151,16 @@ public enum class Endian {
      * `byteOffset + 4` must be less than or equal to the length of this object.
      */
     public abstract fun setInt(bytes: ByteArray, byteOffset: Int, value: Int)
+
+    /**
+    * Returns the positive integer represented by the four bytes starting
+    * at the specified [byteOffset] in this object, in unsigned binary
+    * form.
+    *
+    * The return value will be between 0 and  2^32 - 1, inclusive.
+    *
+    * The [byteOffset] must be non-negative, and
+    * `byteOffset + 4` must be less than or equal to the length of this object.
+     */
+    public inline fun getUInt(bytes: ByteArray, byteOffset: Int): UInt = getInt(bytes, byteOffset).toUInt()
 }
