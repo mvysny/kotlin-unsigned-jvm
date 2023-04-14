@@ -37,6 +37,8 @@ class ByteArrayTest : DynaTest({
 
             getLong(1)
             getLong(1, Endian.Little)
+            setLong(1, 0)
+            setLong(1, 0, Endian.Little)
         }
     }
 })

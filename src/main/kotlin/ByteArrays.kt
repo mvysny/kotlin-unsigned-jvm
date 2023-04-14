@@ -226,3 +226,18 @@ public inline fun ByteArray.setUInt(byteOffset: Int, value: UInt, endian: Endian
  * `byteOffset + 8` must be less than or equal to the length of this object.
  */
 public inline fun ByteArray.getLong(byteOffset: Int, endian: Endian = Endian.Big): Long = endian.getLong(this, byteOffset)
+
+/**
+ * Sets the eight bytes starting at the specified [byteOffset] in this
+ * object to the two's complement binary representation of the specified
+ * [value], which must fit in eight bytes.
+ *
+ * In other words, [value] must lie
+ * between -2^63 and 2^63 - 1, inclusive.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 8` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.setLong(byteOffset: Int, value: Long, endian: Endian = Endian.Big) {
+    endian.setLong(this, byteOffset, value)
+}
