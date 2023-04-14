@@ -11,6 +11,7 @@ class ByteArrayTest : DynaTest({
             getUByte(0)
             setUByte(0, 0.toUByte())
             setUByte(0, 0.toUInt())
+            getShort(0)
 
             setShort(1, 0)
             setShort(1, 0, Endian.Little)

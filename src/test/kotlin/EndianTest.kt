@@ -12,6 +12,17 @@ fun expect4(expectedHex: String, block: (ByteArray) -> Unit) {
 class EndianTest : DynaTest({
     group("Big") {
         val e = Endian.Big
+        group("getShort()") {
+            test("0") {
+                expect(0) { e.getShort("00000000".fromHex(), 1) }
+            }
+            test("0x0102") {
+                expect(0x0102.toShort()) { e.getShort("00010200".fromHex(), 1) }
+            }
+            test("0xdead") {
+                expect(0xdead.toShort()) { e.getShort("00dead00".fromHex(), 1) }
+            }
+        }
         group("setShort(Int)") {
             test("0") {
                 expect4("00000000") { e.setShort(it, 1, 0) }
@@ -40,6 +51,17 @@ class EndianTest : DynaTest({
     }
     group("Little") {
         val e = Endian.Little
+        group("getShort()") {
+            test("0") {
+                expect(0) { e.getShort("00000000".fromHex(), 1) }
+            }
+            test("0x0102") {
+                expect(0x0201.toShort()) { e.getShort("00010200".fromHex(), 1) }
+            }
+            test("0xdead") {
+                expect(0xadde.toShort()) { e.getShort("00dead00".fromHex(), 1) }
+            }
+        }
         group("setShort(Int)") {
             test("0") {
                 expect4("00000000") { e.setShort(it, 1, 0) }
