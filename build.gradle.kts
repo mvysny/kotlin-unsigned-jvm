@@ -25,7 +25,6 @@ kotlin {
 }
 
 dependencies {
-    api(kotlin("stdlib-jdk11"))
     testImplementation("com.github.mvysny.dynatest:dynatest:0.24")
 }
 
