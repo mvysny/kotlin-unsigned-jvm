@@ -40,13 +40,13 @@ dependencies {
 Why yet another library when you can use `DataInputStream.read*()` and `DataOutputStream.write*()` functions?
 Two reasons:
 
-* Those classes do not support unsigned Kotlin types directly;
-* Those classes always use `Endian.Big`.
+* `Data*Stream` do not support unsigned Kotlin types directly;
+* `Data*Stream`  always use `Endian.Big`, it's not possible to configure them to write in `Endian.Little`.
 
 What about Kotlin's built-in [ByteArray.setUIntAt()](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.native/set-u-int-at.html)?
 
 * It's only for Kotlin/Native, it's not available in Kotlin/JVM
-* The endianness is undocumented, which is a big issue.
+* The endianness is undocumented, which is a big issue. Could be big, little, or platform-specific.
 
 Why not using Java built-in `ByteBuffer` as follows:
 
