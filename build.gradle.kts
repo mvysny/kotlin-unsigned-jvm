@@ -20,6 +20,10 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
 }
 
+tasks.compileJava {
+    options.javaModuleVersion = provider { version as String }
+}
+
 kotlin {
     explicitApi()
 }
