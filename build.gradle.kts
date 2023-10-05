@@ -92,7 +92,7 @@ signing {
 tasks.withType<Test> {
     useJUnitPlatform()
     testLogging {
-        // to see the exceptions of failed tests in Travis-CI console.
+        // when the test fails, show the exception stacktrace in stdout
         exceptionFormat = TestExceptionFormat.FULL
     }
 }
