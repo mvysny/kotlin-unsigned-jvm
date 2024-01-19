@@ -30,6 +30,7 @@ kotlin {
 
 dependencies {
     testImplementation("com.github.mvysny.dynatest:dynatest:0.24")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
