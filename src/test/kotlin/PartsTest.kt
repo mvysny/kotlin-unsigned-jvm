@@ -1,11 +1,12 @@
 package com.github.mvysny.unsigned
 
-import com.github.mvysny.dynatest.DynaTest
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import kotlin.test.expect
 
-class PartsTest : DynaTest({
-    group("UShort") {
-        test("hibyte") {
+class PartsTest {
+    @Nested inner class UShort {
+        @Test fun hibyte() {
             expect(0.toUByte()) { 0.toUShort().hibyte }
             expect(0.toUByte()) { 1.toUShort().hibyte }
             expect(0.toUByte()) { 0x80.toUShort().hibyte }
@@ -18,7 +19,7 @@ class PartsTest : DynaTest({
             expect(0xFF.toUByte()) { 0xFFFF.toUShort().hibyte }
         }
 
-        test("lobyte") {
+        @Test fun lobyte() {
             expect(0.toUByte()) { 0.toUShort().lobyte }
             expect(1.toUByte()) { 1.toUShort().lobyte }
             expect(0x80.toUByte()) { 0x80.toUShort().lobyte }
@@ -31,4 +32,4 @@ class PartsTest : DynaTest({
             expect(0xFF.toUByte()) { 0xFFFF.toUShort().lobyte }
         }
     }
-})
+}

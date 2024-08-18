@@ -32,7 +32,8 @@ kotlin {
 }
 
 dependencies {
-    testImplementation("com.github.mvysny.dynatest:dynatest:0.25")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.11.0")
+    testImplementation(kotlin("test"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

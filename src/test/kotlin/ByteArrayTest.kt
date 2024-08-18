@@ -1,9 +1,9 @@
 package com.github.mvysny.unsigned
 
-import com.github.mvysny.dynatest.DynaTest
+import org.junit.jupiter.api.Test
 
-class ByteArrayTest : DynaTest({
-    test("api") {
+class ByteArrayTest {
+    @Test fun api() {
         ByteArray(100).apply {
             getByte(0)
             setByte(0, 0)
@@ -46,4 +46,4 @@ class ByteArrayTest : DynaTest({
             setULong(1, 0.toULong(), Endian.Little)
         }
     }
-})
+}
