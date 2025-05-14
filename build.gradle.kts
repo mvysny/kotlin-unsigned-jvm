@@ -12,7 +12,7 @@ plugins {
 defaultTasks("clean", "build")
 
 group = "com.github.mvysny.kotlin-unsigned-jvm"
-version = "0.3-SNAPSHOT"
+version = "0.3"
 
 repositories {
     mavenCentral()
