@@ -87,7 +87,7 @@ public inline fun ByteArray.setUByte(byteOffset: Int, value: UByte) {
  * [value].
  *
  * The [byteOffset] must be non-negative, and
- * `byteOffset + 2` must be less than or equal to the length of [bytes].
+ * `byteOffset + 2` must be less than or equal to the length of [this].
  */
 public inline fun ByteArray.setShort(byteOffset: Int, value: Short, endian: Endian = Endian.Big) {
     endian.setShort(this, byteOffset, value)
@@ -115,7 +115,7 @@ public inline fun ByteArray.getShort(
  * [value]. Only the lowest 16 bits are considered, high 16 bits are ignored.
  *
  * The [byteOffset] must be non-negative, and
- * `byteOffset + 2` must be less than or equal to the length of [bytes].
+ * `byteOffset + 2` must be less than or equal to the length of [this].
  */
 public inline fun ByteArray.setShort(byteOffset: Int, value: Int, endian: Endian = Endian.Big) {
     endian.setShort(this, byteOffset, value)
@@ -139,7 +139,7 @@ public inline fun ByteArray.getUShort(byteOffset: Int, endian: Endian = Endian.B
  * which must fit in two bytes.
  *
  * The [byteOffset] must be non-negative, and
- * `byteOffset + 2` must be less than or equal to the length of [bytes].
+ * `byteOffset + 2` must be less than or equal to the length of [this].
  */
 public inline fun ByteArray.setUShort(byteOffset: Int, value: UShort, endian: Endian = Endian.Big) {
     endian.setUShort(this, byteOffset, value)
@@ -151,7 +151,7 @@ public inline fun ByteArray.setUShort(byteOffset: Int, value: UShort, endian: En
  * which must fit in two bytes.
  *
  * The [byteOffset] must be non-negative, and
- * `byteOffset + 2` must be less than or equal to the length of [bytes].
+ * `byteOffset + 2` must be less than or equal to the length of [this].
  */
 public inline fun ByteArray.setUShort(byteOffset: Int, value: UInt, endian: Endian = Endian.Big) {
     endian.setUShort(this, byteOffset, value)
