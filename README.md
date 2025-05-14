@@ -31,7 +31,7 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    implementation("com.github.mvysny.kotlin-unsigned-jvm:kotlin-unsigned-jvm:0.1")
+    implementation("com.github.mvysny.kotlin-unsigned-jvm:kotlin-unsigned-jvm:0.2")
 }
 ```
 
