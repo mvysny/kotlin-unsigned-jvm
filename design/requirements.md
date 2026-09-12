@@ -70,3 +70,16 @@ fill it (it reads Java sources, and there are none but `module-info.java`), so t
 Dokka and `javadoc` stays disabled.
 **Enforced by.** `T_javadoc_jar_from_dokka`.
 **See.** `D_dokka_javadoc`.
+
+## R_bounds_contract_published — The out-of-range contract reaches the published javadoc jar, not only the `@throws` tags
+
+**Status:** Active.
+**Why.** `@throws` is a standard KDoc tag and the accessors use it, but Dokka's **javadoc** renderer
+drops it silently — it survives Dokka's HTML renderer, and `@param` / `@return` survive both. So the
+tags document the contract for IDE and source readers (who get it from the sources jar) while the
+`-javadoc.jar` shows nothing: the same shape of hole as an empty javadoc jar, failing nothing and
+shipping unnoticed. The `Endian` class doc states the contract in prose, which does render, so the
+published artifact states it once rather than nowhere. Kotlin has no checked exceptions, so between
+them these are the only exception contract a caller gets.
+**Enforced by.** `T_endian_states_bounds`.
+**See.** `D_kdoc_voice`, `D_dokka_javadoc`.

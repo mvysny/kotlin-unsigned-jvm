@@ -14,6 +14,93 @@ what the alternatives do (`comparison.md`).
 
 ---
 
+## D_kdoc_voice — KDoc is written for this API, not transcribed from Dart; contracts go in prose (2026-09-12)
+
+**Status:** Shipped 2026-09-12.
+
+Every accessor carried Dart's `ByteData` documentation near-verbatim: three paragraphs apiece — what
+it returns, the range of the value, the offset precondition — in about twenty copies, with
+`ByteArrays.kt` a second copy of `Endian.kt`'s. Beyond the repetition, three things were actually
+wrong:
+
+* **The range paragraphs documented a deficiency this library does not have.** "The return value
+  will be between 0 and 2^16 - 1, inclusive" is load-bearing in Dart, where `ByteData.getUint16`
+  returns `int` because Dart has no unsigned type. Here `getUShort` returns `UShort` and the
+  sentence restates the signature. We had imported Dart's compensation for the exact gap this
+  library exists to close, into the one slot reserved for what the type *cannot* say.
+* **"this object" pointed at the wrong object.** Dart's methods are on the receiver; `Endian`'s take
+  the array as a parameter, so on every member of `Endian` the phrase named the enum constant while
+  meaning `bytes`.
+* **Three setters claimed a precondition they do not enforce.** `setByte(Int)`, `setUByte(UInt)` and
+  `setUShort(UInt)` all said the value "must fit"; all three truncate in silence, as `README.md` and
+  `AGENTS.md` had said all along. Only `setShort(Int)` documented it.
+
+Rewritten to the `writing-kdoc` skill: one summary sentence per member, the cross-cutting contracts
+(unaligned offsets, out-of-range throwing and its width-counted message, silent truncation in the
+wider-typed setters) stated once on the `Endian` class doc, and per-member blocks carrying only what
+is specific to them.
+
+**Rejected: keeping the Dart phrasing for portability.** It was a deliberate convention, on the
+reasoning that someone porting Dart code would recognize the wording. Mimicking `ByteData`'s *API*
+is the library's whole pitch; mimicking its *prose* imports the limits of Dart's type system into
+documentation for a language that does not share them. The API names still match, which is what a
+porter actually greps for.
+
+### The `@throws` problem, and why the tags stay anyway
+
+`ByteArrays.kt` documents the bounds contract with `@throws`, and **that tag does not reach the
+published javadoc jar.** Keeping it anyway is deliberate.
+
+`@throws` (with its alias `@exception`) is a documented KDoc block tag, listed in
+[Kotlin's KDoc reference](https://kotlinlang.org/docs/kotlin-doc.html), and Dokka parses it
+correctly. Exactly one renderer discards it, established by probing a marker through both rather
+than by assuming:
+
+| Probe marker in | `dokkaGeneratePublicationHtml` | `dokkaGeneratePublicationJavadoc` |
+|---|---|---|
+| `@param` | renders | renders |
+| `@return` | renders | renders |
+| `@throws` | renders | **dropped — the words "Throws" and "Bounds" appear nowhere in the output** |
+
+So the fault is in the **javadoc output plugin**, not in the tag and not in Dokka's model. JetBrains
+label that format Alpha and "for the most part a lookalike"; silently losing unsupported tags is a
+known shape of it ([Kotlin/dokka#2262](https://github.com/Kotlin/dokka/issues/2262)). We meet it
+only because `D_dokka_javadoc` chose the javadoc format over HTML. Reported upstream as
+[Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602) — **check its status before
+re-litigating any of this.**
+
+**Rejected: dropping the tag and writing the clause in prose on each function.** Prose renders in
+both places, so it looked strictly better — until two facts landed. The build publishes a **sources
+jar** (`withSourcesJar()`), and for a Kotlin consumer the IDE reading that jar is the *primary*
+documentation channel, where `@throws` renders properly as a Throws section; the javadoc jar is
+mostly Central's checkbox plus javadoc.io browsing. And a tripwire banning a standard language tag,
+permanently, to route around someone else's Alpha renderer is a bad trade for a cosmetic gain.
+
+**The mitigation instead:** the `Endian` class doc states the out-of-range contract in prose, which
+*does* render, so the published artifact states it once rather than nowhere — pinned by
+`R_bounds_contract_published` / `T_endian_states_bounds`, because that bullet now looks redundant
+next to 24 tags and is exactly what a tidy-up would delete. The residual cost is real and accepted:
+someone reading `ByteArray.getInt` on javadoc.io sees no bounds contract on that page and must
+click through to `Endian`.
+
+**Rejected: publishing Dokka's HTML output in the javadoc jar.** It would fix this outright — the
+jar keeps its name and classifier either way, and Central never looks inside — but measuring it
+showed the trade is a swap, not a win: HTML renders `@throws` and keeps `package-list`, while losing
+`element-list` and the javadoc-shaped `index-files/` and `member-search-index.js` that are the whole
+reason `D_dokka_javadoc` picked this format. Not worth reversing a recent, deliberate decision for.
+
+**Revisit when [Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602) is fixed** — re-run
+the probe; if `@throws` renders, the `Endian` prose bullet can shed its load-bearing role and
+`T_endian_states_bounds` can go.
+
+**Consequences.** `Endian`'s members are deliberately no longer standalone — they lean on the class
+doc for the shared contract, which is the skill's rule and a reversal of the "complete standalone"
+line `AGENTS.md` used to carry. The asymmetry between the two files is intentional: `Endian` has a
+class doc to hoist contracts onto, and `ByteArrays.kt` — top-level extensions — has no such slot, so
+each function restates the bounds clause. A Dokka `package.md` was considered as that missing slot
+and rejected: it is a separate file that nothing load-bearing may live only in, so it would not have
+saved the restatement.
+
 ## D_floats_in_scope — `Float`/`Double` accessors belong here, "unsigned" in the name notwithstanding (2026-09-12)
 
 **Status:** Shipped 2026-09-12.

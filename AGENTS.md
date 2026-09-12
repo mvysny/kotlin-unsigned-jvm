@@ -87,6 +87,10 @@ project needs nothing from them.*
   NaN to the canonical pattern, which is non-conformance for every format that specifies bits — and
   the swap is invisible under test, because `kotlin.test.expect` canonicalizes too. Assert NaNs via
   `.toRawBits()`. See `R_no_nan_canonicalization`, `D_float_raw_bits`.
+- **`Endian`'s class doc states the out-of-range contract in prose; don't delete it as "covered by
+  the `@throws` tags".** Dokka's *javadoc* renderer — the one that fills the published jar — silently
+  drops `@throws`, so that bullet is the only statement of the contract that reaches users of the
+  jar. See `R_bounds_contract_published`, `D_kdoc_voice`.
 - **The JPMS module name, its `exports` and the `--patch-module` argument all name
   `com.github.mvysny.unsigned`.** When they drift javac says "package is empty or does not exist",
   and the tempting fix is an empty `Dummy.java` — which lies. See `R_module_package_sync`,
@@ -134,8 +138,10 @@ Single source set; no nested `AGENTS.md`. One line per file:
 
 ## Skills this project follows
 
-- **KDoc carries the per-symbol what *and* why, complete standalone**, and states the level each
-  fact belongs at; the `writing-kdoc` skill has the rules.
+- **KDoc states each fact at the level it belongs**: a contract shared by every accessor lives once
+  on the `Endian` class doc, a per-symbol fact on the symbol. Members are deliberately *not*
+  standalone. The `writing-kdoc` skill has the rules; `D_kdoc_voice` has what this project decided
+  on top of them.
 
 ## Working on this codebase
 

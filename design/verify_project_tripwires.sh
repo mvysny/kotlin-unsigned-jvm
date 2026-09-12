@@ -67,6 +67,15 @@ grep -q 'from(tasks\.dokkaGeneratePublicationJavadoc)' "$BUILD" \
 grep -q 'tasks\.javadoc {' "$BUILD" && grep -q 'enabled = false' "$BUILD" \
   || err "T_javadoc_jar_from_dokka: $BUILD no longer disables the \`javadoc\` task — it has nothing to read but module-info.java (R_javadoc_jar_has_docs, D_dokka_javadoc)"
 
+# --- T_endian_states_bounds ---------------------------------------------------
+# dokka-javadoc drops @throws (probed: it survives Dokka's HTML renderer and not its javadoc one,
+# while @param and @return survive both), so the ByteArrays.kt tags render for IDE and source
+# readers but not in the published -javadoc.jar. The Endian class doc's prose bullet is the one
+# statement of the bounds contract that reaches that jar — don't delete it as "duplicated by the
+# tags". See R_bounds_contract_published in design/requirements.md, D_kdoc_voice.
+grep -q 'Out of range throws' "$ENDIAN" \
+  || err "T_endian_states_bounds: $ENDIAN no longer states the out-of-range contract in class-doc prose — the @throws tags do not reach the published javadoc jar (R_bounds_contract_published, D_kdoc_voice)"
+
 if [ "$fail" -eq 0 ]; then
   echo "project tripwires: ok"
 fi
