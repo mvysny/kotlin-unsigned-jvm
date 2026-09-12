@@ -93,10 +93,11 @@ is the library's whole pitch; mimicking its *prose* imports the limits of Dart's
 documentation for a language that does not share them. The API names still match, which is what a
 porter actually greps for.
 
-### The `@throws` problem, and why the tags stay anyway
+### The `@throws` problem, and why the tags stay
 
-`ByteArrays.kt` documents the bounds contract with `@throws`, and **that tag does not reach the
-published javadoc jar.** Keeping it anyway is deliberate.
+`ByteArrays.kt` documents the bounds contract with `@throws`, and for a while **that tag did not
+reach the published javadoc jar.** Keeping it anyway was deliberate; `D_dokka_html` has since
+changed the renderer, and the tags now render there too.
 
 `@throws` (with its alias `@exception`) is a documented KDoc block tag, listed in
 [Kotlin's KDoc reference](https://kotlinlang.org/docs/kotlin-doc.html), and Dokka parses it
