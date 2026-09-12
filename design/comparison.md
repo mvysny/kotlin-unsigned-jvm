@@ -119,7 +119,7 @@ Kotlin's support for signature-polymorphic calls has had compiler bugs as recent
 Which is why **this library uses these internally** — the ergonomics objection above is entirely about
 the *call site*, and it evaporates once the six handles are private and a typed API sits in front of
 them. `Endian` is a thin shell over exactly the handles shown here (`D_varhandle` in
-[DECISIONS.md](DECISIONS.md) has the benchmark), so you get the performance ceiling without writing
+[decisions.md](decisions.md) has the benchmark), so you get the performance ceiling without writing
 `as Int` yourself. Reach for the raw handles directly only if you also need `Float`/`Double`, which
 this library doesn't cover.
 
@@ -276,7 +276,7 @@ without restructuring anything.
 - **No 24-bit.** Netty and korlibs both have it; 24-bit fields do turn up in protocol work.
 - **JVM only.** kotlinx-io, Okio and korlibs are all multiplatform. If you ever want this code on
   Native or JS, this library is a dead end — and the `-jvm` in the artifact name commits to that.
-  This is deliberate and was weighed; see `D_jvm_only` in [DECISIONS.md](DECISIONS.md).
+  This is deliberate and was weighed; see `D_jvm_only` in [decisions.md](decisions.md).
 - **Bus factor of one.** A single-maintainer micro-library is a real, if small, supply-chain
   consideration next to `ByteBuffer` (free, forever) or Okio.
 - **Nothing else.** No slicing, no bulk copy, no varints, no strings, no off-heap. It is deliberately
@@ -314,7 +314,7 @@ If you do keep it, the changes that would most improve the case for its existenc
 2. ~~**Reconsider the JVM-only framing.**~~ Going multiplatform would make this the only random-access
    unsigned `ByteArray` API in Kotlin returning proper unsigned types on every platform — a much
    stronger niche than "JVM-only convenience over `ByteBuffer`". Weighed and declined: `D_jvm_only` in
-   [DECISIONS.md](DECISIONS.md). Note also that since `D_varhandle` the logic is no longer pure
+   [decisions.md](decisions.md). Note also that since `D_varhandle` the logic is no longer pure
    Kotlin, so this is no longer the near-verbatim move it once was.
 3. **Say all this in the README.** The current motivation section argues against `Data*Stream`,
    Kotlin/Native and a strawman `ByteBuffer` (relative reads with a pointer), but doesn't address

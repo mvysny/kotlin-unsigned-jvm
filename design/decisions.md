@@ -1,20 +1,56 @@
-# Design decisions
+# Decisions
 
-Why the API looks the way it does, and which designs were tried and rejected — the things that are
-invisible in the code and silent under test, so a future reader would otherwise re-propose them.
+Why this library is the way it is: one entry per decision *already taken*, with the roads not
+taken. Not what the code does (`src/` and its KDoc), not what must hold (`requirements.md`), not
+what the alternatives do (`comparison.md`).
 
-Not a changelog, and not a home for anything the code already says. Add an entry only when the
-reasoning would be genuinely hard to reconstruct from `src/` and the KDoc.
-
-Each entry gets a stable `D_`-slugged heading so it can be referenced from elsewhere (a KDoc line, a
-commit message, an `ideas/` file) without a bare number that rots on reordering.
-
-Decisions about *other* libraries and built-in APIs — why not `ByteBuffer`, why not kotlinx-io — live
-in [COMPARISON.md](COMPARISON.md) instead, since that's where a reader comparing options will look.
+- Cite an entry by slug — `D_<slug>` — never by position. `grep '^## D_' design/decisions.md`
+  is the index; there is no table of contents.
+- **No entry without a real fork.** Nothing seriously considered and rejected → not a decision.
+- Entries are mutable: refine in place, newest first. A *shipped* decision that is reversed
+  keeps its entry as a tombstone (`Status: Superseded by D_<slug>`); the replacement is written fresh.
+- Shape: `## D_<slug> — <title> (<decided date>)`, then **Status**, the context and the decision,
+  one **Rejected: …** paragraph per alternative, and the consequences.
 
 ---
 
-## `D_patch_module` — JPMS: patch the Kotlin output into the module, don't fake the package
+## D_design_docs — Adopt the `design/` doc layer, with `architecture.md` as the assembled picture (2026-09-12)
+
+**Status:** Accepted; installed 2026-09-12.
+
+Before this, the prose lived in shouting UPPERCASE files at the root — `DECISIONS.md`,
+`COMPARISON.md`, a root `ideas/` — and `AGENTS.md` carried a "Layout and how the pieces fit"
+section that was really architecture prose plus a graduation table, paid for on every turn of every
+session. Nothing stated *what must hold*: the two invariants that are genuinely easy to break from a
+distance (the top-level `VarHandle`s, the three-way JPMS package name) lived only as paragraphs
+inside `D_varhandle` and `D_patch_module`, where an agent editing `build.gradle.kts` would not look.
+
+Rationale and reference move under `design/` — `decisions.md` (`D_`), `requirements.md` (`R_`),
+`architecture.md`, `comparison.md`, `ideas/` — and `AGENTS.md` keeps only invariants, the module
+map and the doc map, under the 34 KB cap its header states.
+
+The assembled picture is **`architecture.md`, a description**: `kotlin { explicitApi() }` forces a
+KDoc block on every public declaration and Dokka publishes those blocks as the `-javadoc.jar`
+(`D_dokka_javadoc`), so per-symbol truth is complete in the source. When `architecture.md` and the
+code disagree, the file is what gets fixed.
+
+**Rejected: keeping the rationale in `AGENTS.md`.** It is loaded on every turn; the `D_varhandle`
+benchmark table alone is a third of the file's budget, and compressing it into a bullet would make
+a second copy that drifts from the entry it points at.
+
+**Rejected: `solution.md`.** That is for a project whose sources are written *against* a spec — an
+install script, thin glue over an upstream product — where a mismatch means the code is wrong. Here
+there are three Kotlin files of ~300 lines whose KDoc is the published API documentation; a spec
+would be a second description of them, and the second copy would lose.
+
+**Consequences.** Every `D_` / `R_` / `T_` slug cited anywhere must resolve —
+`design/verify_design_tripwires.sh` and `design/verify_project_tripwires.sh` check it, and CI runs
+both. The four pre-existing entries got dated headings with the backticks stripped (the tripwire
+matches `^## D_`), and their `[DECISIONS.md]` / `[COMPARISON.md]` links were swept to the new paths.
+
+## D_patch_module — JPMS: patch the Kotlin output into the module, don't fake the package (2026-09-12)
+
+**Status:** Shipped 2026-09-12 (`ebf97f6`).
 
 `src/main/java/module-info.java` exports `com.github.mvysny.unsigned`, a package implemented entirely in
 Kotlin. javac compiles the module descriptor on its own and does not consider the Kotlin output part of the
@@ -50,7 +86,9 @@ either way. That count is 14 as of `D_varhandle`, which added an `EndianKt.class
 The `javadoc` task used to hit the same error for the same reason; that is now moot, since it no longer runs
 at all — see `D_dokka_javadoc`.
 
-## `D_varhandle` — `Endian` reads and writes through byte-array-view `VarHandle`s
+## D_varhandle — `Endian` reads and writes through byte-array-view `VarHandle`s (2026-09-12)
+
+**Status:** Shipped 2026-09-12 (`2b53cda`).
 
 `Endian.kt` used to assemble every value by hand — `(bytes[o].toUByte().toUInt() shl 24) + …` and the
 matching `ushr`/`toByte()` stores. Each constant now delegates to one of six
@@ -91,7 +129,9 @@ The cost is that `Endian.kt` now names a JVM API, where before all three source 
 demotes a hypothetical multiplatform port from a file move to a `jvmMain` actual over a shift-or `commonMain`
 fallback, and is one of the three costs weighed in `D_jvm_only`.
 
-## `D_dokka_javadoc` — Dokka fills the javadoc jar; the `javadoc` task is disabled
+## D_dokka_javadoc — Dokka fills the javadoc jar; the `javadoc` task is disabled (2026-09-12)
+
+**Status:** Shipped 2026-09-12 (`6d611c1`).
 
 Maven Central requires a `-javadoc.jar`. The stock `javadoc` task cannot produce one here: it reads Java
 sources, and this library has none but `module-info.java` — which it rejected with the same "package is empty"
@@ -112,12 +152,14 @@ projects resolve. Dokka's HTML format is prettier but is not a drop-in for that.
 **Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the task to look
 at is `dokkaGeneratePublicationJavadoc`.
 
-## `D_jvm_only` — stay JVM-only; multiplatform is deferred, not foreclosed
+## D_jvm_only — stay JVM-only; multiplatform is deferred, not foreclosed (2026-09-12)
+
+**Status:** Accepted 2026-09-12 (`99c78e2`); revisit only when a user asks for Native or JS.
 
 The niche is real: nothing in Kotlin offers random access into a plain `ByteArray` returning true unsigned
 types on every platform (kotlinx-io and Okio are cursors, korlibs widens to `Int`/`Long`, the Kotlin/Native
 stdlib is experimental with undocumented endianness — see the `A_multiplatform` row in
-[COMPARISON.md](COMPARISON.md)). It is also *empty*, and this library is the obvious thing to fill it with.
+[comparison.md](comparison.md)). It is also *empty*, and this library is the obvious thing to fill it with.
 Rejected anyway, as of 2026-09-12: the JVM is the only platform this is shipped on, so the argument is
 positioning, not need — and the costs are recurring while the benefit is speculative.
 

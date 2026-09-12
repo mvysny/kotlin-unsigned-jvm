@@ -83,7 +83,7 @@ throws in `Float`/`Double`, slicing and off-heap buffers for free. Three differe
   instead of — the array you already have.
 
 If those three don't bother you, use `ByteBuffer`; it's free and it's in the JDK. See
-[COMPARISON.md](COMPARISON.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
+[design/comparison.md](design/comparison.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
 Okio, Netty, Guava, Apache Commons and others.
 
 Not everything on that list is a competitor. kotlinx-io in particular solves a different shape of

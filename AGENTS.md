@@ -1,105 +1,143 @@
-# AGENTS.md
+# kotlin-unsigned-jvm — AGENTS.md
 
-Guidance for AI coding agents working in this repository.
+An index, not a manual: each entry is the one-line invariant ("what you must not break") plus
+pointers to where the truth and its rationale live — a KDoc block (`See {Endian}`), a decision
+(`See D_<slug>`), a requirement (`See R_<slug>`). Never the explanation itself. **Size cap: 34 KB.** Over it,
+garbage-collect by moving, never summarising: a rationale to its `D_`, a per-symbol rule to its
+KDoc, a cross-symbol flow to `design/architecture.md`, a directory's own invariants and file map to
+that directory's `AGENTS.md` (`ls */AGENTS.md` for the set; ≤ 10 KB each, loaded only when work
+touches the directory — this project has none). `CLAUDE.md` is exactly `@AGENTS.md`.
 
 ## What this is
 
 A tiny, dependency-free Kotlin/JVM library (`com.github.mvysny.kotlin-unsigned-jvm:kotlin-unsigned-jvm`)
-published to Maven Central. It mimics Dart's `ByteData`: extension functions on `ByteArray` to read/write
-signed and unsigned 8/16/32/64-bit integers at a byte offset with explicit endianness. See README.md for
-the motivation (why not `DataInputStream` / `ByteBuffer` / Kotlin-Native `setUIntAt`).
+published to Maven Central. It mimics Dart's `ByteData`: extension functions on `ByteArray` that
+read and write signed and unsigned 8/16/32/64-bit integers at a byte offset with explicit
+endianness. The JDK owns the byte shuffling (byte-array-view `VarHandle`s); this library owns the
+API shape — true Kotlin unsigned types, endianness as an ordinary parameter, no wrapper object.
 
-Architecture is deliberately trivial. Read `src/main/kotlin/` in full (three files, ~300 lines) before changing anything.
+Architecture is deliberately trivial: three Kotlin files, ~300 lines. Read `src/main/kotlin/` in
+full before changing anything.
 
-## Build and test
+## Design docs
 
-Gradle wrapper, Kotlin 2.x, JDK 17+ (CI matrix: JDK 17/21/24 on Linux, macOS, Windows).
+Rationale and reference live under `design/`; this file holds only what its header says it may.
+Each file has one audience and *what it is allowed to own*; every file's preamble states its
+entry shape and how to cite it. This section is the whole contract — nothing outside the repo
+is needed to follow it.
 
-```bash
-./gradlew                       # defaultTasks = clean build (compiles, runs tests, builds jars)
-./gradlew test                  # tests only
-./gradlew dokkaGeneratePublicationJavadoc      # API docs -> build/dokka/javadoc/ (fills the -javadoc.jar)
-./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest'                 # one test class
-./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest$Little*'         # one @Nested inner class
-./gradlew test --tests 'com.github.mvysny.unsigned.PartsTest$UShort.hibyte'    # one test method
-```
+| File | Owns | Loaded? |
+|---|---|---|
+| `README.md` | a prospective user: what the library does, the coordinates, why not `DataInputStream` / `ByteBuffer` | — |
+| `AGENTS.md` (this) | what you must not break from a distance; the module map; this table — its rules are in its header | **every turn** |
+| `design/requirements.md` | what must hold — `R_` entries, stated not argued | lazy |
+| `design/architecture.md` | **the map** of the code as it is — delegation direction, the read/write chain, how the JPMS module is assembled; **the code is the truth** | lazy |
+| `design/decisions.md` | why this and not that — `D_` entries, roads not taken | lazy |
+| `design/comparison.md` | what the *alternatives* do — `ByteBuffer`, kotlinx-io, Okio, korlibs, Commons — descriptively, on `A_`-slugged axes | lazy |
+| `design/ideas/` | not yet decided — one file per idea, `ls` is the index, deleted on graduation | transient |
+| KDoc in `src/main/kotlin/` | per-symbol truth: what each accessor returns, its offset contract, what it throws | source of truth |
 
-Tests are JUnit 5 with `kotlin.test.expect`. Test classes lean heavily on `@Nested inner class` grouping
-(one nested class per operation, one `@Test` per value), so use the `Outer$Inner` form when filtering.
-Failed-test stack traces already print to stdout (`exceptionFormat = FULL`); no need for `--info`/`--stacktrace`.
+Rules that keep the split from drifting:
 
-There is no linter or formatter configured.
+- **One home per fact; the others link.** A one-line restatement that saves a jump is fine —
+  repeat the *fact*, defer the *explanation*. Compressing a `D_` entry into a bullet here is a
+  third copy, not a summary.
+- **`decisions.md` argues, `requirements.md` states, `comparison.md` is about *them* not us,
+  `architecture.md` composes and never argues.** A paragraph explaining *why* in any file but
+  `decisions.md` has drifted; move it and cite the `D_`.
+- **No `D_` entry without a real fork; only decisions already taken.** Ideas, TODOs and open
+  questions go to `design/ideas/`. A shipped decision that is reversed keeps its entry as a
+  tombstone.
+- **Slugs:** `D_` decisions, `R_` requirements, `T_` tripwires (cited from the requirement's
+  *Enforced by*, defined by the check), `Q_` open questions inside `design/ideas/` only — a durable
+  doc never cites a `Q_`. This project declares one more: **`A_` comparison axes**, defined and
+  used only in `design/comparison.md`. Underscores throughout, backticked in prose, cited by slug
+  never by position; `grep '^## D_' design/decisions.md` is the index.
+- **`design/verify_design_tripwires.sh`** fails on any cited `D_` / `R_` without a heading, a `T_`
+  without a check, an oversized `AGENTS.md`, or a `CLAUDE.md` that isn't the shim;
+  **`design/verify_project_tripwires.sh`** holds this project's own `T_` checks. CI runs both; run
+  them before committing a doc change.
 
-## Layout and how the pieces fit
+### Ideas & their graduation
 
-`src/main/kotlin/` (package `com.github.mvysny.unsigned`):
+An idea graduates the moment it is acted on, and graduation is not done until its file is gone.
+An idea file is a scratchpad, exempt from the doc-quality rules above because it is going to be
+deleted. Where the lasting nuggets land:
 
-- `Endian.kt` — the enum `Endian { Big, Little }` is where all byte-shuffling lives. Each constant overrides
-  the four abstract primitives `getShort/setShort(Int)/getInt/setInt/getLong/setLong`; every unsigned and
-  `Short`-typed variant is a non-abstract `inline` wrapper that converts and delegates to those primitives.
-  Add a new width or type here first. The primitives delegate to six byte-array-view `VarHandle`s, which
-  **must stay top-level `private val`s** — moving them into the enum silently costs the optimization they
-  exist for, while compiling and passing every test. See `D_varhandle` in DECISIONS.md before touching them.
-- `ByteArrays.kt` — the public `ByteArray.getX/setX(byteOffset, [value], endian = Endian.Big)` extension
-  API. Every function is a one-line `inline` delegate to `Endian`; it contains no logic of its own. Byte-sized
-  variants (`getByte/setByte/getUByte/setUByte`) bypass `Endian` since endianness is meaningless for one byte.
-- `Parts.kt` — `UShort.hibyte` / `UShort.lobyte` extension properties.
+- the choice made + the alternatives rejected → a `D_` entry in `design/decisions.md`
+- something that must hold from now on → an `R_` entry in `design/requirements.md`
+- a new file, or a changed responsibility → one line in the module map below
+- how the pieces work together — the delegation chain, a flow crossing several files → `design/architecture.md`
+- what a competing library or built-in does → `design/comparison.md`, on its `A_` axes
+- what one function does, its contract, its edge cases → its KDoc; `explicitApi()` requires one anyway
+- usage, motivation, why you'd want this library → `README.md`
+- the release process → `CONTRIBUTING.md`
+- a cross-cutting invariant ("never …") → this file
+- work deferred *as a consequence of a logged decision* → that entry's *Consequences*
 
-`src/main/java/`:
+*Layout seeded from the `design-docs` and `agents-md` skills (mvysny, `~/.claude/skills`); this
+project needs nothing from them.*
 
-- `module-info.java` declares the JPMS module `com.github.mvysny.unsigned`, and is the only file here.
-  javac compiles it without seeing the Kotlin classes as part of the module, so `build.gradle.kts` passes
-  `--patch-module` pointing at the Kotlin output; without that, `exports com.github.mvysny.unsigned` fails
-  with "package is empty or does not exist". Keep the module name, the `exports`, and the `--patch-module`
-  argument in sync — all three name the same package. See `D_patch_module` in DECISIONS.md.
+## Invariants
 
-`src/test/kotlin/TestUtils.kt` provides `ByteArray.toHex()`, `Byte.toHex()`, `String.fromHex()`; all
-tests express expected bytes as hex strings, so reuse these rather than building byte arrays by hand.
+- **The six byte-array-view `VarHandle`s stay top-level `private val`s in `Endian.kt`.** Folding
+  them into the enum as instance fields compiles, passes every test, and silently makes every
+  accessor slower than the shift-or code they replaced. See `R_varhandles_top_level`, `D_varhandle`.
+- **The JPMS module name, its `exports` and the `--patch-module` argument all name
+  `com.github.mvysny.unsigned`.** When they drift javac says "package is empty or does not exist",
+  and the tempting fix is an empty `Dummy.java` — which lies. See `R_module_package_sync`,
+  `D_patch_module`.
 
-## Conventions that matter here
+## Module map
 
-- `kotlin { explicitApi() }` is on: every public declaration needs an explicit `public` modifier and a
-  return type, and (by project convention) a KDoc block. Files that use `inline` on trivial functions carry
-  `@file:Suppress("NOTHING_TO_INLINE")`. That KDoc is what Dokka renders into the published `-javadoc.jar`,
-  so it's user-facing — the stock `javadoc` task is disabled (`D_dokka_javadoc` in DECISIONS.md).
-- Default endianness is `Endian.Big` everywhere; keep that consistent when adding overloads.
-- `setShort(Int)`/`setUShort(UInt)`-style overloads that accept a wider type silently ignore the high bits.
-  This is documented behaviour, not a bug.
-- Hex literals ≥ 2^63 can't be written directly as `ULong` in Kotlin (KT-4749); tests use
-  `"deadbeef...".toULong(16)` in a top-level `private val` instead.
-- JVM target is 17 for both Kotlin and Java; don't raise it without also updating the CI matrix.
+Single source set; no nested `AGENTS.md`. One line per file:
 
-## Ideas & their graduation
+- `src/main/kotlin/Endian.kt` — the enum; all byte shuffling, over six `VarHandle`s.
+- `src/main/kotlin/ByteArrays.kt` — the public `ByteArray.getX/setX` extensions; one-line delegates, no logic.
+- `src/main/kotlin/Parts.kt` — `UShort.hibyte` / `UShort.lobyte`.
+- `src/main/java/module-info.java` — the JPMS descriptor; the only Java source.
+- `src/test/kotlin/TestUtils.kt` — `ByteArray.toHex()`, `Byte.toHex()`, `String.fromHex()`; tests express bytes as hex, so reuse these.
 
-Loose ideas — designs not ready to act on, refactors worth considering — live one-per-file in
-`ideas/`, named after what the idea *is* (`ideas/modbus-word-order.md`, never `ideas/idea1.md`). There is
-no index file; `ls ideas/` is the index. An idea file is a scratchpad, not a durable doc: write it
-freely, and it is exempt from the KDoc/doc-quality rules above because it is going to be deleted.
+## Conventions
 
-**An idea graduates the moment it's acted on, and graduation is not done until the file is gone.**
-Before deleting, backport any lasting nugget to the durable place for that kind of nugget:
+- **`kotlin { explicitApi() }` is on.** Every public declaration needs an explicit `public`, a
+  return type and — by project convention — a KDoc block; that KDoc is what Dokka publishes.
+- **Default endianness is `Endian.Big` everywhere**, on every accessor that takes one. See
+  `R_endian_defaults_big`.
+- **Files that `inline` trivial functions carry `@file:Suppress("NOTHING_TO_INLINE")`.**
+- **A wider-typed setter overload silently ignores the high bits** — `setShort(Int)`,
+  `setUShort(UInt)`. Documented behaviour, not a bug.
+- **JVM target is 17** for both Kotlin and Java; raising it means updating the CI matrix too.
+- **Tests are JUnit 5 with `kotlin.test.expect`**, grouped one `@Nested inner class` per operation
+  and one `@Test` per value — so filter with the `Outer$Inner` form.
+- **Hex literals ≥ 2^63 can't be written as `ULong`** (KT-4749); tests use `"deadbeef…".toULong(16)`
+  in a top-level `private val` instead.
+- There is no linter or formatter configured.
 
-| Nugget | Durable home |
-|---|---|
-| What a function does, its contract, its edge cases | KDoc in `src/main/kotlin/` — `explicitApi()` requires it anyway |
-| Usage, motivation, why you'd want this library | `README.md` |
-| Why not `ByteBuffer` / kotlinx-io / any competing library or built-in | `COMPARISON.md` |
-| A design decision, or a rejected design someone would plausibly re-propose | `DECISIONS.md`, one `D_`-slugged section each |
-| Build, test, layout or code conventions an agent must know | this file, under *Conventions that matter here* |
-| Release process | `CONTRIBUTING.md` |
+## Commands
 
-Nothing may linger as a stale second copy: once the code is the source of truth, the idea file goes.
-The test for a good graduation — could a maintainer who never saw the idea file still discover
-everything that mattered, in the place they'd naturally look?
+- `./gradlew` — `defaultTasks = clean build`: compiles, runs tests, builds the jars.
+- `./gradlew test` — tests only. Failed-test stack traces already print to stdout
+  (`exceptionFormat = FULL`); no need for `--info` / `--stacktrace`.
+- `./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest$Little*'` — one nested class;
+  `…PartsTest$UShort.hibyte` — one method.
+- `./gradlew dokkaGeneratePublicationJavadoc` — API docs into `build/dokka/javadoc/`.
+- `design/verify_design_tripwires.sh && design/verify_project_tripwires.sh` — the doc-layer and
+  project tripwires.
+- CI (`.github/workflows/gradle.yml`) runs `./gradlew clean build` on JDK 17/21/24 × Linux/macOS/
+  Windows, plus the tripwires once on Linux.
+- Releasing: see `CONTRIBUTING.md`.
 
-## Releasing
+## Skills this project follows
 
-See CONTRIBUTING.md. Short form: drop `-SNAPSHOT` from `version` in `build.gradle.kts`, commit and tag with
-the bare version string, push with tags, then `./gradlew clean build publish closeAndReleaseStagingRepositories`,
-then bump to the next `-SNAPSHOT`. Publishing goes through the Sonatype Central OSSRH staging API
-(`io.github.gradle-nexus.publish-plugin`) and requires signing credentials.
+- **KDoc carries the per-symbol what *and* why, complete standalone**, and states the level each
+  fact belongs at; the `writing-kdoc` skill has the rules.
 
-## Repo hygiene
+## Working on this codebase
 
-`bin/`, `.classpath`, `.project`, `.settings/` are Eclipse/Buildship output and are git-ignored. `build/`
-and `.gradle/` are Gradle output. None of these are sources; ignore them when searching.
+- **Don't re-enable the `javadoc` task.** It has nothing to read but `module-info.java` and
+  rejects it; an empty `-javadoc.jar` fails nothing and shipped unnoticed for every release before
+  0.4. If the jar comes up empty, look at `dokkaGeneratePublicationJavadoc`. See
+  `R_javadoc_jar_has_docs`, `D_dokka_javadoc`.
+- **`bin/`, `.classpath`, `.project`, `.settings/`** are Eclipse/Buildship output and **`build/`,
+  `.gradle/`** are Gradle output — all git-ignored, none of them sources. Ignore them when searching.

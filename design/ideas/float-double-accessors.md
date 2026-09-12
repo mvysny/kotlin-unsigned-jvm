@@ -3,7 +3,7 @@
 ## Why
 
 The most obvious gap in the API, and the cheapest to close. Everything we compare against in
-COMPARISON.md has it: Dart's `ByteData` (`getFloat32`/`getFloat64` — and we claim to mimic
+design/comparison.md has it: Dart's `ByteData` (`getFloat32`/`getFloat64` — and we claim to mimic
 `ByteData`), `ByteBuffer`, `MemorySegment`, korlibs. We don't. Anyone parsing a protocol frame with a
 temperature or a voltage in it currently has to drop to `Float.fromBits(bytes.getInt(...))` by hand,
 which is exactly the kind of thing this library exists to stop you doing.
@@ -12,7 +12,7 @@ Notably *not* a gap for Okio, which also has no float support — so we'd be lea
 
 **But be honest about what kind of gap it is.** This is *positioning*, not demand. See
 [Is this actually our gap?](#is-this-actually-our-gap) below. The multiplatform idea had exactly the
-same character and was declined for it (`D_jvm_only` in DECISIONS.md); this file should say so rather
+same character and was declined for it (`D_jvm_only` in design/decisions.md); this file should say so rather
 than implying users are asking. The difference in this one's favour is that the cost is a few lines of
 `fromBits`/`toRawBits` delegation, not a second core implementation and a rename.
 
@@ -173,7 +173,7 @@ overwhelmingly — Renogy's ÷100, CAN/OBD-II's per-PID scale-and-offset, most o
 BLE. Embedded designers avoid floats because the MCU may have no FPU and because `2560` is exact
 where `25.6f` is not. This library's origin — talking to a Renogy Rover — used no floats at all.
 
-So COMPARISON.md's "most obvious real gap" is true as *feature-matrix* criticism, and a reviewer
+So design/comparison.md's "most obvious real gap" is true as *feature-matrix* criticism, and a reviewer
 comparing us to `ByteBuffer` will notice. It is not evidence that users want floats. The current doc
 slightly conflates the two claims; fix that wording on graduation.
 
@@ -222,15 +222,15 @@ them argumentative rather than factual, against ~8 functions of code:
 |---|---|
 | `README.md` function list | four new bullets |
 | `README.md` `ByteBuffer` section | "it throws in `Float`/`Double` … for free" stops being a concession |
-| `COMPARISON.md` summary table | our `A_floats` cell ❌ → ✅ |
-| `COMPARISON.md` "Where it loses" | bullet 1 deleted |
-| `COMPARISON.md` "Verdict" | recommendation 1 deleted, list renumbered |
-| `DECISIONS.md` | `D_float_raw_bits` (bit patterns, and the round-trip non-promise) and `D_floats_in_an_unsigned_library` |
+| `design/comparison.md` summary table | our `A_floats` cell ❌ → ✅ |
+| `design/comparison.md` "Where it loses" | bullet 1 deleted |
+| `design/comparison.md` "Verdict" | recommendation 1 deleted, list renumbered |
+| `design/decisions.md` | `Q_float_raw_bits` (bit patterns, and the round-trip non-promise) and `Q_floats_in_an_unsigned_library` — both become `D_` entries on graduation |
 
-`D_floats_in_an_unsigned_library` is the one that most needs writing: `Float` has no signed/unsigned
+`Q_floats_in_an_unsigned_library` is the one that most needs writing: `Float` has no signed/unsigned
 dimension, so "why does an unsigned library have floats?" is exactly the objection someone
 re-proposes later. The answer is that the library is really *Dart's `ByteData` for Kotlin* and
-`unsigned` in the name describes what was missing elsewhere, not the scope — a reading COMPARISON.md
+`unsigned` in the name describes what was missing elsewhere, not the scope — a reading design/comparison.md
 already committed to by making `A_floats` one of its axes. A rename would be the one moment the name
 could stop fighting the scope, but `D_jvm_only` declined the multiplatform move that would have
 forced one, so the name is staying as it is. Live with it, or argue the rename on its own merits.
@@ -246,5 +246,5 @@ one sentence on the raw-bits behaviour.
   (`Float32List` etc.), which are a different concept entirely and arguably out of scope.
 - Sequencing against multiplatform: moot, that one is declined (`D_jvm_only`). If it is ever revived,
   there is still no conflict — `fromBits`/`toRawBits` are common stdlib, so floats-first stays right.
-- 24-bit accessors are the *other* gap COMPARISON.md names. Deliberately not this file, and there's
+- 24-bit accessors are the *other* gap design/comparison.md names. Deliberately not this file, and there's
   no idea file for it yet. Is it on the roadmap at all?

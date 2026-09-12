@@ -29,3 +29,13 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew clean build --stacktrace --info --no-daemon
 
+  # The doc layer (design/) is checked once, on Linux — the scripts are bash and OS-independent.
+  tripwires:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Verify design docs and project invariants
+      run: |
+        design/verify_design_tripwires.sh
+        design/verify_project_tripwires.sh
+

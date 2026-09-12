@@ -121,19 +121,19 @@ case worth being deliberate about is 64-bit: pin `GH EF CD AB`-style vectors exp
   (cumulative generation, total amp-hours), `Endian.Big` handled it. Motivation here is the
   ecosystem, not the hardware — the same positioning-vs-demand distinction as
   [[float-double-accessors]] and the multiplatform idea (declined on exactly that ground; see
-  `D_jvm_only` in DECISIONS.md), except that here there is one fewer argument for acting, since the
+  `D_jvm_only` in design/decisions.md), except that here there is one fewer argument for acting, since the
   *other* two at least close cells competitors have filled.
 - Does a general-purpose byte-array library want to carry a quirk whose only real constituency is one
   industrial protocol? Counter-argument in *Why this library* above; the decision should be recorded
-  as `D_word_order` in DECISIONS.md either way, because "why does `Endian` have four values?" is a
+  as `Q_word_order` (a `D_` entry in design/decisions.md on graduation) either way, because "why does `Endian` have four values?" is a
   question someone will ask in three years.
 - Is this a better use of effort than [[float-double-accessors]]? It's ~60 lines against ~8 functions,
-  it serves the domain the library was actually built for, and no competitor in COMPARISON.md has it
+  it serves the domain the library was actually built for, and no competitor in design/comparison.md has it
   either — not `ByteBuffer`, not korlibs, not kotlinx-io. Netty doesn't have it. That's an *empty*
   cell in the comparison table rather than a cell where we're behind, which is a different and
   arguably better kind of win.
-- Graduation would add an axis to the COMPARISON.md table (`A_word_order`?) where every single
+- Graduation would add an axis to the design/comparison.md table (`A_word_order`?) where every single
   competing row is ❌. Tempting — but only add the axis if it's a real axis and not a
   self-congratulatory one; the test is whether a reader choosing a library would weigh it.
-- Unrelated but adjacent, and also unfiled: **24-bit accessors**, the other gap COMPARISON.md names
+- Unrelated but adjacent, and also unfiled: **24-bit accessors**, the other gap design/comparison.md names
   (Netty and korlibs both have it). Not this idea. Worth its own file if protocol work is the target.
