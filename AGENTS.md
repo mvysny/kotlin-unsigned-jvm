@@ -37,7 +37,9 @@ There is no linter or formatter configured.
 - `Endian.kt` — the enum `Endian { Big, Little }` is where all byte-shuffling lives. Each constant overrides
   the four abstract primitives `getShort/setShort(Int)/getInt/setInt/getLong/setLong`; every unsigned and
   `Short`-typed variant is a non-abstract `inline` wrapper that converts and delegates to those primitives.
-  Add a new width or type here first.
+  Add a new width or type here first. The primitives delegate to six byte-array-view `VarHandle`s, which
+  **must stay top-level `private val`s** — moving them into the enum silently costs the optimization they
+  exist for, while compiling and passing every test. See `D_varhandle` in DECISIONS.md before touching them.
 - `ByteArrays.kt` — the public `ByteArray.getX/setX(byteOffset, [value], endian = Endian.Big)` extension
   API. Every function is a one-line `inline` delegate to `Endian`; it contains no logic of its own. Byte-sized
   variants (`getByte/setByte/getUByte/setUByte`) bypass `Endian` since endianness is meaningless for one byte.

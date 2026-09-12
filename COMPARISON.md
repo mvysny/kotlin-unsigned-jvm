@@ -116,7 +116,12 @@ you need one static handle per (width × order) — six of them to match this li
 Kotlin's support for signature-polymorphic calls has had compiler bugs as recently as
 [KT-72880](https://youtrack.jetbrains.com/issue/KT-72880) (fixed in Kotlin 2.4.0).
 
-If you have a measured hot loop, reach for this. For everything else the ergonomics aren't worth it.
+Which is why **this library uses these internally** — the ergonomics objection above is entirely about
+the *call site*, and it evaporates once the six handles are private and a typed API sits in front of
+them. `Endian` is a thin shell over exactly the handles shown here (`D_varhandle` in
+[DECISIONS.md](DECISIONS.md) has the benchmark), so you get the performance ceiling without writing
+`as Int` yourself. Reach for the raw handles directly only if you also need `Float`/`Double`, which
+this library doesn't cover.
 
 ### `MemorySegment` (JDK 22+)
 

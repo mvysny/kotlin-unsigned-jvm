@@ -2,98 +2,87 @@
 
 package com.github.mvysny.unsigned
 
+import java.lang.invoke.MethodHandles
+import java.lang.invoke.VarHandle
+import java.nio.ByteOrder
+
+// C2 collapses a byte-array-view VarHandle into a single unaligned (byte-swapping) load or store
+// only while it can see the handle itself as a constant — which means a static final field, and
+// therefore a top-level `val`. Folding these into `Endian` as constructor-injected instance fields
+// reads better, compiles, and passes every test, but silently demotes each access to a generic
+// VarHandle invocation slower than the hand-rolled shifts this replaced. Leave them out here.
+private val SHORT_BE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(ShortArray::class.java, ByteOrder.BIG_ENDIAN)
+private val SHORT_LE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(ShortArray::class.java, ByteOrder.LITTLE_ENDIAN)
+private val INT_BE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(IntArray::class.java, ByteOrder.BIG_ENDIAN)
+private val INT_LE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(IntArray::class.java, ByteOrder.LITTLE_ENDIAN)
+private val LONG_BE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(LongArray::class.java, ByteOrder.BIG_ENDIAN)
+private val LONG_LE: VarHandle =
+    MethodHandles.byteArrayViewVarHandle(LongArray::class.java, ByteOrder.LITTLE_ENDIAN)
+
 /**
  * Describes endianness to be used when accessing or updating a sequence of bytes.
+ *
+ * ```
+ * val bytes = ByteArray(4)
+ * Endian.Little.setInt(bytes, 0, 0x0a0b0c0d)
+ * Endian.Big.getUShort(bytes, 2)      // => 0x0b0au
+ * ```
+ *
+ * Offsets are unaligned-safe: any accessor may start at any offset.
+ *
+ * Every accessor throws [IndexOutOfBoundsException] when the bytes it would touch fall
+ * outside the array — but the message counts in units of the value's width rather than
+ * bytes, so reading an [Int] at offset 2 of a 4-byte array reports "index 2 out of bounds
+ * for length 1".
  */
 public enum class Endian {
     Big {
-        override fun getShort(
-            bytes: ByteArray,
-            byteOffset: Int
-        ): Short = ((bytes[byteOffset].toUByte().toUInt() shl 8) + bytes[byteOffset + 1].toUByte()).toShort()
+        override fun getShort(bytes: ByteArray, byteOffset: Int): Short =
+            SHORT_BE.get(bytes, byteOffset) as Short
 
         override fun setShort(bytes: ByteArray, byteOffset: Int, value: Int) {
-            bytes[byteOffset] = (value ushr 8).toByte()
-            bytes[byteOffset + 1] = value.toByte()
+            SHORT_BE.set(bytes, byteOffset, value.toShort())
         }
 
-        override fun getInt(bytes: ByteArray, byteOffset: Int): Int = (
-                (bytes[byteOffset].toUByte().toUInt() shl 24) +
-                        (bytes[byteOffset + 1].toUByte().toUInt() shl 16) +
-                        (bytes[byteOffset + 2].toUByte().toUInt() shl 8) +
-                        bytes[byteOffset + 3].toUByte()).toInt()
+        override fun getInt(bytes: ByteArray, byteOffset: Int): Int =
+            INT_BE.get(bytes, byteOffset) as Int
 
         override fun setInt(bytes: ByteArray, byteOffset: Int, value: Int) {
-            bytes[byteOffset] = (value ushr 24).toByte()
-            bytes[byteOffset + 1] = (value ushr 16).toByte()
-            bytes[byteOffset + 2] = (value ushr 8).toByte()
-            bytes[byteOffset + 3] = value.toByte()
+            INT_BE.set(bytes, byteOffset, value)
         }
 
-        override fun getLong(bytes: ByteArray, byteOffset: Int): Long = (
-                (bytes[byteOffset].toUByte().toULong() shl 56) +
-                        (bytes[byteOffset + 1].toUByte().toULong() shl 48) +
-                        (bytes[byteOffset + 2].toUByte().toULong() shl 40) +
-                        (bytes[byteOffset + 3].toUByte().toULong() shl 32) +
-                        (bytes[byteOffset + 4].toUByte().toULong() shl 24) +
-                        (bytes[byteOffset + 5].toUByte().toULong() shl 16) +
-                        (bytes[byteOffset + 6].toUByte().toULong() shl 8) +
-                        bytes[byteOffset + 7].toUByte()).toLong()
+        override fun getLong(bytes: ByteArray, byteOffset: Int): Long =
+            LONG_BE.get(bytes, byteOffset) as Long
 
         override fun setLong(bytes: ByteArray, byteOffset: Int, value: Long) {
-            bytes[byteOffset] = (value ushr 56).toByte()
-            bytes[byteOffset + 1] = (value ushr 48).toByte()
-            bytes[byteOffset + 2] = (value ushr 40).toByte()
-            bytes[byteOffset + 3] = (value ushr 32).toByte()
-            bytes[byteOffset + 4] = (value ushr 24).toByte()
-            bytes[byteOffset + 5] = (value ushr 16).toByte()
-            bytes[byteOffset + 6] = (value ushr 8).toByte()
-            bytes[byteOffset + 7] = value.toByte()
+            LONG_BE.set(bytes, byteOffset, value)
         }
     },
     Little {
-        override fun getShort(
-            bytes: ByteArray,
-            byteOffset: Int
-        ): Short = ((bytes[byteOffset + 1].toUByte().toUInt() shl 8) + bytes[byteOffset].toUByte()).toShort()
+        override fun getShort(bytes: ByteArray, byteOffset: Int): Short =
+            SHORT_LE.get(bytes, byteOffset) as Short
 
         override fun setShort(bytes: ByteArray, byteOffset: Int, value: Int) {
-            bytes[byteOffset + 1] = (value ushr 8).toByte()
-            bytes[byteOffset] = value.toByte()
+            SHORT_LE.set(bytes, byteOffset, value.toShort())
         }
 
-        override fun getInt(bytes: ByteArray, byteOffset: Int): Int = (
-                (bytes[byteOffset + 3].toUByte().toUInt() shl 24) +
-                        (bytes[byteOffset + 2].toUByte().toUInt() shl 16) +
-                        (bytes[byteOffset + 1].toUByte().toUInt() shl 8) +
-                        bytes[byteOffset].toUByte()).toInt()
+        override fun getInt(bytes: ByteArray, byteOffset: Int): Int =
+            INT_LE.get(bytes, byteOffset) as Int
 
         override fun setInt(bytes: ByteArray, byteOffset: Int, value: Int) {
-            bytes[byteOffset + 3] = (value ushr 24).toByte()
-            bytes[byteOffset + 2] = (value ushr 16).toByte()
-            bytes[byteOffset + 1] = (value ushr 8).toByte()
-            bytes[byteOffset] = value.toByte()
+            INT_LE.set(bytes, byteOffset, value)
         }
 
-        override fun getLong(bytes: ByteArray, byteOffset: Int): Long = (
-                (bytes[byteOffset + 7].toUByte().toULong() shl 56) +
-                        (bytes[byteOffset + 6].toUByte().toULong() shl 48) +
-                        (bytes[byteOffset + 5].toUByte().toULong() shl 40) +
-                        (bytes[byteOffset + 4].toUByte().toULong() shl 32) +
-                        (bytes[byteOffset + 3].toUByte().toULong() shl 24) +
-                        (bytes[byteOffset + 2].toUByte().toULong() shl 16) +
-                        (bytes[byteOffset + 1].toUByte().toULong() shl 8) +
-                        bytes[byteOffset].toUByte()).toLong()
+        override fun getLong(bytes: ByteArray, byteOffset: Int): Long =
+            LONG_LE.get(bytes, byteOffset) as Long
 
         override fun setLong(bytes: ByteArray, byteOffset: Int, value: Long) {
-            bytes[byteOffset + 7] = (value ushr 56).toByte()
-            bytes[byteOffset + 6] = (value ushr 48).toByte()
-            bytes[byteOffset + 5] = (value ushr 40).toByte()
-            bytes[byteOffset + 4] = (value ushr 32).toByte()
-            bytes[byteOffset + 3] = (value ushr 24).toByte()
-            bytes[byteOffset + 2] = (value ushr 16).toByte()
-            bytes[byteOffset + 1] = (value ushr 8).toByte()
-            bytes[byteOffset] = value.toByte()
+            LONG_LE.set(bytes, byteOffset, value)
         }
     };
 

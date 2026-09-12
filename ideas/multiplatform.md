@@ -22,13 +22,19 @@ plain `ByteArray`, returning true Kotlin unsigned types, on every platform**:
 That's an empty niche, not a crowded one. It's also the niche where `ByteBuffer` — our only serious
 competitor — simply doesn't exist.
 
-## The code is already ready
+## The code is nearly ready
 
-All three source files are pure Kotlin: `ByteArray` indexing, shifts, and `toUByte()`/`toULong()`
-conversions. Not one JVM API is referenced in `Endian.kt`, `ByteArrays.kt` or `Parts.kt`. The
-`commonMain` migration is a file move, essentially verbatim.
+`ByteArrays.kt` and `Parts.kt` are pure Kotlin — `ByteArray` indexing, shifts, and
+`toUByte()`/`toULong()` conversions — and move to `commonMain` verbatim.
 
-The JVM-only parts are all build machinery:
+`Endian.kt` no longer does (it did until 2026-09-12). Its six primitives now delegate to
+`java.lang.invoke` byte-array-view `VarHandle`s, worth 3–5.6× on reads; see `D_varhandle` in
+DECISIONS.md. So `Endian` becomes the one `expect`/`actual` split: the `VarHandle` version stays as the
+`jvmMain` actual, and `commonMain` gets back the shift-or arithmetic git still has at `6d611c1`. That is
+exactly the shape kotlinx-io uses, so it's well-trodden rather than novel — but it does mean the
+migration is no longer a pure file move, and the shift-or path needs its own test run per target.
+
+The JVM-only parts are otherwise all build machinery:
 
 - `src/main/java/module-info.java` (the JPMS module), which belongs to the JVM target only. Need to work
   out how it fits a KMP `jvm()` target — this is the fiddliest part of the whole change.
