@@ -14,6 +14,93 @@ what the alternatives do (`comparison.md`).
 
 ---
 
+## D_floats_in_scope — `Float`/`Double` accessors belong here, "unsigned" in the name notwithstanding (2026-09-12)
+
+**Status:** Shipped 2026-09-12.
+
+`Float` has no signed/unsigned dimension at all, so "why does an *unsigned* library have floats?" is
+the objection someone re-proposes every couple of years. Recorded once, here.
+
+The scope was never "unsigned only", and floats are not what broke it: `getShort`, `getInt` and
+`getLong` are signed and have been from the start. `unsigned` in the name describes **what was
+missing from the alternatives** — `DataInputStream` and `ByteBuffer` widen instead of returning
+unsigned types (see the `A_kotlin_unsigned` column in [comparison.md](comparison.md)) — not the
+boundary of what this library does. What the library actually is, and what `README.md` has claimed
+since its first line, is *Dart's `ByteData` for Kotlin*: random access into a plain `ByteArray` at a
+byte offset, with endianness an ordinary argument. Floats are a `ByteData` accessor and fit that
+sentence exactly.
+
+The cost is eight functions and no new logic — `getFloat` is `Float.fromBits(getInt(…))` and
+`setFloat` is `setInt(…, value.toRawBits())`, so `Endian`'s two constants are untouched and
+`EndianTest`'s existing `getInt`/`getLong` coverage carries the correctness weight. Endianness
+applies to the *container*, not to the number: IEEE 754 fixes what a 32-bit pattern means and says
+nothing about which order the bytes hit the wire, and no format anywhere reverses the mantissa bytes
+but not the exponent bytes. Whole-word reversal is the entirety of it, which is why delegating to
+`getInt`/`getLong` is not merely convenient but exactly right.
+
+**Rejected: leaving the gap open.** Honest framing first — this was *positioning*, not demand.
+Nobody asked; the library's origin (a Renogy Rover) used no floats at all, because sensor protocols
+carry quantities as scaled integers (`D_no_unit_scaling`). The multiplatform idea had exactly the
+same character and was declined for it (`D_jvm_only`). What decides it differently here is cost:
+`D_jvm_only` bought a permanent second implementation, a rename and a wider CI matrix, while this
+buys eight delegating functions. And the gap was load-bearing *against* the library in its own docs —
+`comparison.md` named it three times and `README.md` had to concede it mid-argument — so keeping it
+was a recurring tax paid to avoid a one-off cost.
+
+**Rejected: `getFloat32`/`getFloat64`, Dart's names.** The API is named after the Kotlin type it
+returns (`getInt`, not `getInt32`); matching ourselves beats matching Dart, and `ByteBuffer` agrees.
+The same rule is what keeps half-precision out (`D_no_float16`).
+
+**Rejected: a `setFloat(Double)` widening overload.** Kotlin has no implicit numeric widening, so
+`bytes.setFloat(0, 1.0)` is *already* a compile error; adding the overload would manufacture a silent
+precision loss where the language had prevented one. This is a point of superiority over Dart, whose
+`ByteData.setFloat32` must take a `double` and round, since Dart has no `float` type. Note the
+contrast with the existing integer setters, where a wider overload *is* offered and documented to
+drop the high bits — truncating an `Int` to 16 bits is exact and reversible in a way rounding a
+`Double` to binary32 is not.
+
+**Consequences.** The remaining `ByteData` features this library lacks are the typed-list views
+(`Float32List` and friends), which are a different concept — a view object over a buffer — and out of
+scope under `A_no_wrapper`. `README.md` can therefore claim `ByteData` scalar parity as fact.
+
+## D_float_raw_bits — the float accessors never canonicalize a NaN (2026-09-12)
+
+**Status:** Shipped 2026-09-12.
+
+`setFloat` goes through `Float.toRawBits()`, never `Float.toBits()`. The two differ on exactly one
+input class: `toBits()` rewrites every NaN to the canonical `0x7fc00000`, `toRawBits()` preserves the
+pattern it was given. Every binary format that carries a float specifies a *bit pattern* — CBOR,
+MessagePack, Thrift, Protobuf, Avro, BSON, WAV, Parquet, HDF5, numpy all `memcpy` the 4 or 8 bytes —
+and some protocols use NaN payload bits as sentinels, so a library that silently rewrote one on write
+would be non-conforming, not merely surprising.
+
+**The promise is one-directional, and the wording matters.** What is guaranteed is that *this library
+never canonicalizes*: `setFloat` writes exactly the bits of the `Float` it is handed. What is **not**
+promised is that a NaN payload survives a round trip through the byte array — the read side
+materializes a `Float` via `Float.fromBits`, which compiles to `java.lang.Float.intBitsToFloat`,
+whose javadoc explicitly declines it: *"this method may not be able to return a float NaN with
+exactly the same bit pattern as the int argument."* That lossy step is the platform's, not ours.
+
+The distinction is not pedantry: it costs nothing here and it is the wording that would survive a
+port. Even though the library is JVM-only (`D_jvm_only`), a Kotlin/JS `Float` is a double at runtime
+and engines canonicalize NaN aggressively, so the stronger promise would be false there on day one.
+
+**Rejected: pinning a NaN-payload round trip as a correctness test.** A payload NaN can only be
+*produced* by `Float.fromBits`, so any such assertion tests `fromBits(x).toRawBits() == x` — the exact
+composition the javadoc carves out — on a 3-OS × 3-JDK matrix. The library's own contract is enforced
+by the absence of `toBits` from the source (`R_no_nan_canonicalization`, `T_float_raw_bits`), not by a
+test. `EndianTest.NaNPayloadIsAPlatformProperty` keeps the vectors anyway, labelled as a platform
+probe: a JDK that mangles a *quiet* NaN payload is worth finding out about, and the comment tells
+whoever sees it go red to delete the probe rather than "fix" the accessors.
+
+**Rejected: `kotlin.test.expect(Float.NaN) { … }` for any NaN assertion.** `expect` resolves to the
+generic `assertEquals`, which boxes and calls `java.lang.Float.equals` — which compares
+`floatToIntBits` and therefore canonicalizes. `expect(Float.fromBits(0x7fc0dead)) { … }` passes even
+when the payload was mangled. Every NaN assertion in the suite goes through `.toRawBits()`, and the
+constants carry a comment saying why, because this is precisely the line a later tidy-up "simplifies".
+The mirror case is free: boxed equality *does* distinguish `0.0f` from `-0.0f`, so the sign-bit
+vectors read naturally.
+
 ## D_no_unit_scaling — the API stops at the bit pattern; scale, offset and units are the caller's (2026-09-12)
 
 **Status:** Accepted 2026-09-12.

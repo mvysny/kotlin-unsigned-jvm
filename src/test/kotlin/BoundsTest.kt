@@ -58,4 +58,16 @@ class BoundsTest {
         @Test fun getUnsigned() = expectOutOfBounds(8) { b, o -> b.getULong(o) }
         @Test fun setUnsigned() = expectOutOfBounds(8) { b, o -> b.setULong(o, 0uL) }
     }
+    @Nested inner class Float_ {
+        @Test fun big() = expectOutOfBounds(4) { b, o -> b.getFloat(o) }
+        @Test fun little() = expectOutOfBounds(4) { b, o -> b.getFloat(o, Endian.Little) }
+        @Test fun setBig() = expectOutOfBounds(4) { b, o -> b.setFloat(o, 0f) }
+        @Test fun setLittle() = expectOutOfBounds(4) { b, o -> b.setFloat(o, 0f, Endian.Little) }
+    }
+    @Nested inner class Double_ {
+        @Test fun big() = expectOutOfBounds(8) { b, o -> b.getDouble(o) }
+        @Test fun little() = expectOutOfBounds(8) { b, o -> b.getDouble(o, Endian.Little) }
+        @Test fun setBig() = expectOutOfBounds(8) { b, o -> b.setDouble(o, 0.0) }
+        @Test fun setLittle() = expectOutOfBounds(8) { b, o -> b.setDouble(o, 0.0, Endian.Little) }
+    }
 }

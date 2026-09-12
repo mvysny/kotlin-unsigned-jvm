@@ -48,6 +48,19 @@ would be a silent data-corruption bug at every call site that trusted the patter
 accessors take no `endian` at all, since endianness is meaningless for one byte.
 **Enforced by.** `T_endian_default_big`; `ByteArrayTest` asserts the default on each width.
 
+## R_no_nan_canonicalization — The float accessors write the exact bits they are given: `toRawBits`, never `toBits`
+
+**Status:** Active.
+**Why.** `toBits()` rewrites every NaN to the canonical `0x7fc00000` / `0x7ff8000000000000`, and
+every binary format that carries a float specifies a bit pattern — so canonicalizing on write is
+non-conformance, not a cosmetic difference, and some protocols use NaN payloads as sentinels. The
+swap compiles, and almost no test catches it: `kotlin.test.expect` boxes and `java.lang.Float.equals`
+canonicalizes too, so an assertion written the obvious way passes either way. The promise is
+one-directional — nothing here canonicalizes; a payload surviving a *round trip* is the platform's
+business.
+**Enforced by.** `T_float_raw_bits`.
+**See.** `D_float_raw_bits`.
+
 ## R_javadoc_jar_has_docs — The published `-javadoc.jar` contains the rendered KDoc, not just a manifest
 
 **Status:** Active.

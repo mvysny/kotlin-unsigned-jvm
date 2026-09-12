@@ -83,6 +83,10 @@ project needs nothing from them.*
 - **The six byte-array-view `VarHandle`s stay top-level `private val`s in `Endian.kt`.** Folding
   them into the enum as instance fields compiles, passes every test, and silently makes every
   accessor slower than the shift-or code they replaced. See `R_varhandles_top_level`, `D_varhandle`.
+- **`setFloat`/`setDouble` write through `toRawBits()`, never `toBits()`.** The latter rewrites every
+  NaN to the canonical pattern, which is non-conformance for every format that specifies bits — and
+  the swap is invisible under test, because `kotlin.test.expect` canonicalizes too. Assert NaNs via
+  `.toRawBits()`. See `R_no_nan_canonicalization`, `D_float_raw_bits`.
 - **The JPMS module name, its `exports` and the `--patch-module` argument all name
   `com.github.mvysny.unsigned`.** When they drift javac says "package is empty or does not exist",
   and the tempting fix is an empty `Dummy.java` — which lies. See `R_module_package_sync`,

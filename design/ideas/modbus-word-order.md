@@ -33,8 +33,8 @@ over RS-485 — so this is the one protocol quirk the library plausibly ought to
 Plausibly, not demonstrably: see the priority note above.
 
 And note it is **not a float problem** — `getUInt` and `getULong` have it today, exactly as much as
-[[float-double-accessors]] would. If this lands, floats inherit it for free, since they're pure
-delegates to `getInt`/`getLong`.
+`getFloat`/`getDouble` do. If this lands, floats inherit it for free, since they're pure delegates to
+`getInt`/`getLong`.
 
 It is also not a hack: "middle-endian" / "mixed-endian" is a real, named byte order (PDP-11 and
 ARM's pre-VFP FPA doubles both did it). `Endian` is genuinely the right home for it — this is not a
@@ -120,14 +120,15 @@ case worth being deliberate about is 64-bit: pin `GH EF CD AB`-style vectors exp
   this library as it stands and worked fully, so whatever Renogy does with its 32-bit fields
   (cumulative generation, total amp-hours), `Endian.Big` handled it. Motivation here is the
   ecosystem, not the hardware — the same positioning-vs-demand distinction as
-  [[float-double-accessors]] and the multiplatform idea (declined on exactly that ground; see
-  `D_jvm_only` in design/decisions.md), except that here there is one fewer argument for acting, since the
-  *other* two at least close cells competitors have filled.
+  the float accessors and the multiplatform idea (declined on exactly that ground; see `D_jvm_only`
+  in design/decisions.md), except that here there is one fewer argument for acting, since the *other*
+  two at least close cells competitors have filled. The floats shipped anyway, on cost alone
+  (`D_floats_in_scope`); this is ~60 lines rather than eight delegates, so that argument is weaker here.
 - Does a general-purpose byte-array library want to carry a quirk whose only real constituency is one
   industrial protocol? Counter-argument in *Why this library* above; the decision should be recorded
   as `Q_word_order` (a `D_` entry in design/decisions.md on graduation) either way, because "why does `Endian` have four values?" is a
   question someone will ask in three years.
-- Is this a better use of effort than [[float-double-accessors]]? It's ~60 lines against ~8 functions,
+- Is this a better use of effort than the float accessors were? It's ~60 lines against ~8 functions,
   it serves the domain the library was actually built for, and no competitor in design/comparison.md has it
   either — not `ByteBuffer`, not korlibs, not kotlinx-io. Netty doesn't have it. That's an *empty*
   cell in the comparison table rather than a cell where we're behind, which is a different and

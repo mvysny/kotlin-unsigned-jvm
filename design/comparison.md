@@ -45,7 +45,7 @@ Not all of these matter to everyone; which ones you care about decides the answe
 
 | | `A_random_access` | `A_kotlin_unsigned` | `A_explicit_endian` | `A_no_wrapper` | `A_zero_dep` | `A_multiplatform` | `A_floats` |
 |---|---|---|---|---|---|---|---|
-| **kotlin-unsigned-jvm** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ JVM only | ❌ |
+| **kotlin-unsigned-jvm** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ JVM only | ✅ |
 | JDK `ByteBuffer` | ✅ | ❌ widens | ⚠️ buffer state | ❌ wrapper | ✅ | — | ✅ |
 | JDK `VarHandle` byte-array view | ✅ | ❌ widens | ❌ baked into handle | ✅ | ✅ | — | ✅ |
 | JDK `MemorySegment` (22+) | ✅ | ❌ widens | ✅ per-layout | ❌ wrapper | ✅ | — | ✅ |
@@ -93,8 +93,8 @@ What you give up:
 - `A_no_wrapper`: `ByteBuffer.wrap()` allocates. Usually escape-analysed away or hoisted out of the
   loop, but it's an object you now have to pass around alongside — or instead of — the array.
 
-`ByteBuffer` also does everything this library doesn't: `Float`/`Double`, bulk `get(byte[])`,
-`slice()`, direct/off-heap buffers, and `CharBuffer`/`IntBuffer` views.
+`ByteBuffer` also does everything this library doesn't: bulk `get(byte[])`, `slice()`, direct/off-heap
+buffers, and `CharBuffer`/`IntBuffer` views.
 
 ### `VarHandle` byte-array views — the fast one
 
@@ -120,8 +120,7 @@ Which is why **this library uses these internally** — the ergonomics objection
 the *call site*, and it evaporates once the six handles are private and a typed API sits in front of
 them. `Endian` is a thin shell over exactly the handles shown here (`D_varhandle` in
 [decisions.md](decisions.md) has the benchmark), so you get the performance ceiling without writing
-`as Int` yourself. Reach for the raw handles directly only if you also need `Float`/`Double`, which
-this library doesn't cover.
+`as Int` yourself.
 
 ### `MemorySegment` (JDK 22+)
 
@@ -270,10 +269,15 @@ without restructuring anything.
 
 ## Where it loses
 
-- **No `Float`/`Double`.** Dart's `ByteData`, `ByteBuffer`, `MemorySegment` and korlibs all have
-  `getFloat32`/`getFloat64`. This is the most obvious real gap, and the cheapest to close
-  (`Float.fromBits(getInt(...))`).
-- **No 24-bit.** Netty and korlibs both have it; 24-bit fields do turn up in protocol work.
+- **No 24-bit.** Netty and korlibs both have it; 24-bit fields do turn up in protocol work. Unlike
+  the float gap this one is not free to close — there is no 3-byte `VarHandle`, so it would be the
+  library's only hand-written byte shuffling. Filed as `design/ideas/24bit-accessors.md`.
+- **No half-precision**, and none is planned: `D_no_float16` in [decisions.md](decisions.md). Only
+  korlibs among the rows below has it at all.
+- **No unit scaling.** Sensor protocols overwhelmingly carry a quantity as a scaled integer rather
+  than a float, and this library deliberately stops at the bit pattern (`D_no_unit_scaling`). Every
+  alternative here stops there too, so this costs nothing against them — but it is the gap most
+  likely to matter in practice.
 - **JVM only.** kotlinx-io, Okio and korlibs are all multiplatform. If you ever want this code on
   Native or JS, this library is a dead end — and the `-jvm` in the artifact name commits to that.
   This is deliberate and was weighed; see `D_jvm_only` in [decisions.md](decisions.md).
@@ -288,9 +292,9 @@ without restructuring anything.
 **Keep it, but know what it's buying.**
 
 The case for retiring it is real and worth stating plainly: `ByteBuffer.wrap(bytes).order(...)` plus a
-`.toUInt()` is free, in the JDK, battle-tested, faster to reach for, and covers floats too. If you're
-comfortable writing that conversion at every call site and keeping `order()` state straight, you do
-not need this library, and "retire it, use `ByteBuffer`" is a defensible answer.
+`.toUInt()` is free, in the JDK, battle-tested and faster to reach for. If you're comfortable writing
+that conversion at every call site and keeping `order()` state straight, you do not need this
+library, and "retire it, use `ByteBuffer`" is a defensible answer.
 
 The case for keeping it is that no alternative fills all four cells at once, and the ones that come
 close each fail on something structural rather than cosmetic:
@@ -308,20 +312,18 @@ nothing to track but the JDK baseline and the Kotlin version.
 
 If you do keep it, the changes that would most improve the case for its existence, in order:
 
-1. **Add `getFloat`/`setFloat`/`getDouble`/`setDouble`.** Closes the most-cited gap for a few lines
-   of `Float.fromBits` / `toRawBits` delegation, and completes the Dart `ByteData` parity the README
-   claims.
-2. ~~**Reconsider the JVM-only framing.**~~ Going multiplatform would make this the only random-access
+1. ~~**Reconsider the JVM-only framing.**~~ Going multiplatform would make this the only random-access
    unsigned `ByteArray` API in Kotlin returning proper unsigned types on every platform — a much
    stronger niche than "JVM-only convenience over `ByteBuffer`". Weighed and declined: `D_jvm_only` in
    [decisions.md](decisions.md). Note also that since `D_varhandle` the logic is no longer pure
    Kotlin, so this is no longer the near-verbatim move it once was.
-3. **Say all this in the README.** The current motivation section argues against `Data*Stream`,
+2. **Say all this in the README.** The current motivation section argues against `Data*Stream`,
    Kotlin/Native and a strawman `ByteBuffer` (relative reads with a pointer), but doesn't address
    `ByteBuffer`'s absolute accessors, which are the genuine competitor. Making the unsigned-typing
    argument explicitly — "`.toUInt()` at every call site is a bug waiting to happen" — is a stronger
    pitch than the ergonomic one.
-4. **Add 24-bit accessors** if protocol work is the target use case.
+3. **Add 24-bit accessors** if protocol work is the target use case — the last remaining ❌ in the
+   table above that is not `A_multiplatform`.
 
 ## Sources
 

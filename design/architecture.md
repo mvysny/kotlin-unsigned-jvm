@@ -20,8 +20,12 @@ here. The module map — one line per file — is in `AGENTS.md`, because an age
   the `Endian` method and supplies `Endian.Big` as the default (`R_endian_defaults_big`).
 - `Endian`'s two constants override exactly six primitives (`get`/`set` × short/int/long, the
   `set`s taking `Int`/`Long`). Every other accessor on the enum — the unsigned ones, the
-  `Short`-typed `setShort` — is a non-abstract `inline` wrapper that converts and delegates to
-  those six. A new width or type is added here first, then exposed in `ByteArrays.kt`.
+  `Short`-typed `setShort`, the float ones — is a non-abstract `inline` wrapper that converts and
+  delegates to those six. A new width or type is added here first, then exposed in `ByteArrays.kt`.
+- The float accessors are pure reinterpretation on top of that: `getFloat`/`setFloat` wrap
+  `getInt`/`setInt` through `Float.fromBits`/`toRawBits` (`getDouble`/`setDouble` likewise over
+  `getLong`/`setLong`), so no byte shuffling is float-aware and neither enum constant mentions them.
+  `toRawBits` and not `toBits` (`R_no_nan_canonicalization`, `D_float_raw_bits`).
 - The six `VarHandle`s are file-private top-level `val`s, deliberately outside the enum
   (`R_varhandles_top_level`, `D_varhandle`). They are the only JVM-specific code in the library.
 - Byte-sized accessors (`getByte`/`setByte`/`getUByte`/`setUByte`) and `Parts.kt` bypass `Endian`

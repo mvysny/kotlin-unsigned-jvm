@@ -190,6 +190,38 @@ class ByteArrayTest {
             expectBytes("ffddccbbaaefbeaddeff") { it.setULong(1, deadbeefaabbccdd, Endian.Little) }
         }
     }
+    @Nested inner class GetFloat {
+        @Test fun `big is the default`() {
+            expect(-2f) { "ffc0000000ffffffffff".fromHex().getFloat(1) }
+        }
+        @Test fun little() {
+            expect(-2f) { "ff000000c0ffffffffff".fromHex().getFloat(1, Endian.Little) }
+        }
+    }
+    @Nested inner class SetFloat {
+        @Test fun `big is the default`() {
+            expectBytes("ffc0000000ffffffffff") { it.setFloat(1, -2f) }
+        }
+        @Test fun little() {
+            expectBytes("ff000000c0ffffffffff") { it.setFloat(1, -2f, Endian.Little) }
+        }
+    }
+    @Nested inner class GetDouble {
+        @Test fun `big is the default`() {
+            expect(Math.PI) { "ff400921fb54442d18ff".fromHex().getDouble(1) }
+        }
+        @Test fun little() {
+            expect(Math.PI) { "ff182d4454fb210940ff".fromHex().getDouble(1, Endian.Little) }
+        }
+    }
+    @Nested inner class SetDouble {
+        @Test fun `big is the default`() {
+            expectBytes("ff400921fb54442d18ff") { it.setDouble(1, Math.PI) }
+        }
+        @Test fun little() {
+            expectBytes("ff182d4454fb210940ff") { it.setDouble(1, Math.PI, Endian.Little) }
+        }
+    }
 }
 
 // workaround for https://youtrack.jetbrains.com/issue/KT-4749

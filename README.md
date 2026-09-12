@@ -1,7 +1,7 @@
 # Kotlin Unsigned utilities for JVM
 
-This library mimics Dart's `ByteData` utility functions and adds the following extension
-functions:
+This library mimics Dart's `ByteData` scalar accessors — every one of them — and adds the following
+extension functions:
 
 * `ByteArray.getByte(byteOffset)`
 * `ByteArray.setByte(byteOffset, value)`
@@ -19,6 +19,10 @@ functions:
 * `ByteArray.setLong(byteOffset, value, endian)`
 * `ByteArray.getULong(byteOffset, endian)`
 * `ByteArray.setULong(byteOffset, value, endian)`
+* `ByteArray.getFloat(byteOffset, endian)`
+* `ByteArray.setFloat(byteOffset, value, endian)`
+* `ByteArray.getDouble(byteOffset, endian)`
+* `ByteArray.setDouble(byteOffset, value, endian)`
 
 The `endian` value always defaults to `Endian.Big`. Supports both `Endian.Little` and `Endian.Big`.
 The one-byte functions take no `endian` parameter since endianness is meaningless for a single byte.
@@ -26,6 +30,14 @@ The one-byte functions take no `endian` parameter since endianness is meaningles
 The 8-bit and 16-bit setters are overloaded to also accept a wider value type, for convenience:
 `setByte()` accepts an `Int`, `setUByte()` a `UInt`, `setShort()` an `Int` and `setUShort()` a `UInt`.
 The high bits are silently ignored in that case.
+
+`getFloat`/`getDouble` are IEEE 754 binary32 and binary64 — the raw bit pattern every binary format
+uses, with byte order the only free variable. Endianness applies to the container, not to the number:
+four bytes reversed is the whole of it, which is why these are exact analogues of `getInt`/`getLong`.
+The bits are never rewritten, so a NaN keeps its payload on the way out. There is deliberately *no*
+`setFloat(Double)` overload — `bytes.setFloat(0, 1.0)` is a compile error rather than a silent
+narrowing, which is one thing Dart's `ByteData` cannot offer you, since Dart has no `float` type and
+`setFloat32` must take a `double` and round.
 
 There are also two extension properties for splitting a 16-bit value into bytes:
 
@@ -69,7 +81,7 @@ buffer.putInt(4, (value + 1u).toInt())
 ```
 
 Yeah.... that also works — bit-for-bit identically to `bytes.getUInt(4, Endian.Little)` — and it
-throws in `Float`/`Double`, slicing and off-heap buffers for free. Three differences remain:
+throws in slicing, bulk copies and off-heap buffers for free. Three differences remain:
 
 * **No unsigned types.** Every read needs a trailing `.toUInt()`/`.toULong()`, and every write a
   `.toInt()`/`.toLong()`. Forget one and a `0xFFFFFFFF` field silently becomes `-1` — a bug rather

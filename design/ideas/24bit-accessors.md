@@ -1,6 +1,6 @@
 # 24-bit accessors
 
-**Priority: undecided** — and unlike [[float-double-accessors]] and [[modbus-word-order]], this one is
+**Priority: undecided** — and unlike the float accessors (shipped: `D_floats_in_scope`), this one is
 not obviously cheap. Split out of the modbus file, which had it as a trailing "unrelated but
 adjacent" note.
 
@@ -67,8 +67,8 @@ the decision is "what do we call it", not "should we".
 
 - `Q_24bit_worth_it` — is protocol work actually the target use case? The library was built for one
   Modbus device (16-bit registers only). Same positioning-vs-demand test that declined multiplatform
-  (`D_jvm_only`) and that [[float-double-accessors]] had to answer honestly. The difference is that
-  this one costs real code, so the answer matters more.
+  (`D_jvm_only`) and that the float accessors had to answer honestly before shipping on cost alone
+  (`D_floats_in_scope`). The difference is that this one costs real code, so the answer matters more.
 - `Q_24bit_naming` — the section above. Whatever wins must also explain why `D_no_float16`'s
   no-Kotlin-type objection doesn't apply, or concede that it does and that 24-bit is worth the
   exception anyway.

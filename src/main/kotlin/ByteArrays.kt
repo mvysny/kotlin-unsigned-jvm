@@ -268,3 +268,64 @@ public inline fun ByteArray.getULong(byteOffset: Int, endian: Endian = Endian.Bi
 public inline fun ByteArray.setULong(byteOffset: Int, value: ULong, endian: Endian = Endian.Big) {
     endian.setULong(this, byteOffset, value)
 }
+
+
+/**
+ * Returns the floating-point number represented by the four bytes at the
+ * specified [byteOffset] in this object, in IEEE 754 single-precision binary
+ * floating-point format (binary32).
+ *
+ * Every four-byte pattern is a valid binary32, infinities and NaNs included.
+ * A NaN's payload bits may not survive being materialized as a [Float] — that
+ * is [Float.Companion.fromBits]'s own caveat, not an extra conversion here.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 4` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getFloat(byteOffset: Int, endian: Endian = Endian.Big): Float = endian.getFloat(this, byteOffset)
+
+/**
+ * Sets the four bytes starting at the specified [byteOffset] in this object to
+ * the IEEE 754 single-precision binary floating-point (binary32) representation
+ * of the specified [value].
+ *
+ * The bits of [value] are written exactly as they are — a NaN keeps its
+ * payload, and nothing is canonicalized. There is no overload taking a [Double]:
+ * narrowing 64-bit to 32-bit loses precision silently, so Kotlin's lack of
+ * implicit widening is left to reject it at compile time.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 4` must be less than or equal to the length of [this].
+ */
+public inline fun ByteArray.setFloat(byteOffset: Int, value: Float, endian: Endian = Endian.Big) {
+    endian.setFloat(this, byteOffset, value)
+}
+
+/**
+ * Returns the floating-point number represented by the eight bytes at the
+ * specified [byteOffset] in this object, in IEEE 754 double-precision binary
+ * floating-point format (binary64).
+ *
+ * Every eight-byte pattern is a valid binary64, infinities and NaNs included.
+ * A NaN's payload bits may not survive being materialized as a [Double] — that
+ * is [Double.Companion.fromBits]'s own caveat, not an extra conversion here.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 8` must be less than or equal to the length of this object.
+ */
+public inline fun ByteArray.getDouble(byteOffset: Int, endian: Endian = Endian.Big): Double = endian.getDouble(this, byteOffset)
+
+/**
+ * Sets the eight bytes starting at the specified [byteOffset] in this object to
+ * the IEEE 754 double-precision binary floating-point (binary64) representation
+ * of the specified [value].
+ *
+ * The bits of [value] are written exactly as they are — a NaN keeps its
+ * payload, and nothing is canonicalized.
+ *
+ * The [byteOffset] must be non-negative, and
+ * `byteOffset + 8` must be less than or equal to the length of [this].
+ */
+public inline fun ByteArray.setDouble(byteOffset: Int, value: Double, endian: Endian = Endian.Big) {
+    endian.setDouble(this, byteOffset, value)
+}

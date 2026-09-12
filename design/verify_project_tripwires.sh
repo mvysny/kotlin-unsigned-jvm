@@ -48,6 +48,16 @@ total=$(grep -c 'endian: Endian' "$BYTEARRAYS" || true)
 defaulted=$(grep -c 'endian: Endian = Endian\.Big' "$BYTEARRAYS" || true)
 [ "$total" -eq "$defaulted" ] || err "T_endian_default_big: $BYTEARRAYS has $total \`endian: Endian\` parameters but only $defaulted default to Endian.Big (R_endian_defaults_big)"
 
+# --- T_float_raw_bits ---------------------------------------------------------
+# setFloat/setDouble must write the exact bits they are handed. toBits() canonicalizes every NaN,
+# which makes the write non-conforming for every format that specifies a bit pattern — and the swap
+# is invisible under test, since kotlin.test.expect canonicalizes too.
+# See R_no_nan_canonicalization in design/requirements.md, D_float_raw_bits.
+n=$(grep -c 'toRawBits()' "$ENDIAN" || true)
+[ "$n" -eq 2 ] || err "T_float_raw_bits: $ENDIAN calls toRawBits() $n times, expected 2 (setFloat and setDouble) — R_no_nan_canonicalization, D_float_raw_bits"
+! grep -q '\.toBits()' "$ENDIAN" \
+  || err "T_float_raw_bits: $ENDIAN calls .toBits(), which canonicalizes every NaN — use toRawBits() (R_no_nan_canonicalization, D_float_raw_bits)"
+
 # --- T_javadoc_jar_from_dokka -------------------------------------------------
 # Maven Central never looks inside the -javadoc.jar, so an empty one fails nothing and shipped
 # unnoticed in every release until 0.4. The jar is fed from Dokka; `javadoc` stays disabled.

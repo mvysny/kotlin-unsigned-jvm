@@ -262,4 +262,70 @@ public enum class Endian {
     public inline fun setULong(bytes: ByteArray, byteOffset: Int, value: ULong) {
         setLong(bytes, byteOffset, value.toLong())
     }
+
+    /**
+     * Returns the floating-point number represented by the four bytes at the
+     * specified [byteOffset] in this object, in IEEE 754 single-precision
+     * binary floating-point format (binary32).
+     *
+     * Every four-byte pattern is a valid binary32, infinities and NaNs
+     * included; the bytes are reinterpreted, never validated. A NaN's payload
+     * bits may not survive being materialized as a [Float] — that is
+     * [Float.Companion.fromBits]'s own caveat, not an extra conversion here.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 4` must be less than or equal to the length of this object.
+     */
+    public inline fun getFloat(bytes: ByteArray, byteOffset: Int): Float =
+        Float.fromBits(getInt(bytes, byteOffset))
+
+    /**
+     * Sets the four bytes starting at the specified [byteOffset] in this object
+     * to the IEEE 754 single-precision binary floating-point (binary32)
+     * representation of the specified [value].
+     *
+     * The bits of [value] are written exactly as they are: this goes through
+     * [Float.toRawBits], so a NaN keeps its payload rather than being
+     * canonicalized to `0x7fc00000` the way [Float.toBits] would. Formats that
+     * specify a bit pattern — and they all do — are therefore written
+     * conforming.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 4` must be less than or equal to the length of [bytes].
+     */
+    public inline fun setFloat(bytes: ByteArray, byteOffset: Int, value: Float) {
+        setInt(bytes, byteOffset, value.toRawBits())
+    }
+
+    /**
+     * Returns the floating-point number represented by the eight bytes at the
+     * specified [byteOffset] in this object, in IEEE 754 double-precision
+     * binary floating-point format (binary64).
+     *
+     * Every eight-byte pattern is a valid binary64, infinities and NaNs
+     * included; the bytes are reinterpreted, never validated. A NaN's payload
+     * bits may not survive being materialized as a [Double] — that is
+     * [Double.Companion.fromBits]'s own caveat, not an extra conversion here.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 8` must be less than or equal to the length of this object.
+     */
+    public inline fun getDouble(bytes: ByteArray, byteOffset: Int): Double =
+        Double.fromBits(getLong(bytes, byteOffset))
+
+    /**
+     * Sets the eight bytes starting at the specified [byteOffset] in this object
+     * to the IEEE 754 double-precision binary floating-point (binary64)
+     * representation of the specified [value].
+     *
+     * The bits of [value] are written exactly as they are: this goes through
+     * [Double.toRawBits], so a NaN keeps its payload rather than being
+     * canonicalized to `0x7ff8000000000000` the way [Double.toBits] would.
+     *
+     * The [byteOffset] must be non-negative, and
+     * `byteOffset + 8` must be less than or equal to the length of [bytes].
+     */
+    public inline fun setDouble(bytes: ByteArray, byteOffset: Int, value: Double) {
+        setLong(bytes, byteOffset, value.toRawBits())
+    }
 }

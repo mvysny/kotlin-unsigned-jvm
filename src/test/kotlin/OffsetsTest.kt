@@ -65,6 +65,14 @@ class OffsetsTest {
         @Test fun big() = expectAtEveryOffset(8, deadbeefaabbccdd, { b, o, v -> b.setULong(o, v) }, { b, o -> b.getULong(o) })
         @Test fun little() = expectAtEveryOffset(8, deadbeefaabbccdd, { b, o, v -> b.setULong(o, v, Endian.Little) }, { b, o -> b.getULong(o, Endian.Little) })
     }
+    @Nested inner class Float_ {
+        @Test fun big() = expectAtEveryOffset(4, -2f, { b, o, v -> b.setFloat(o, v) }, { b, o -> b.getFloat(o) })
+        @Test fun little() = expectAtEveryOffset(4, -2f, { b, o, v -> b.setFloat(o, v, Endian.Little) }, { b, o -> b.getFloat(o, Endian.Little) })
+    }
+    @Nested inner class Double_ {
+        @Test fun big() = expectAtEveryOffset(8, Math.PI, { b, o, v -> b.setDouble(o, v) }, { b, o -> b.getDouble(o) })
+        @Test fun little() = expectAtEveryOffset(8, Math.PI, { b, o, v -> b.setDouble(o, v, Endian.Little) }, { b, o -> b.getDouble(o, Endian.Little) })
+    }
 }
 
 // workaround for https://youtrack.jetbrains.com/issue/KT-4749
