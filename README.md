@@ -58,12 +58,30 @@ What about Kotlin's built-in [ByteArray.setUIntAt()](https://kotlinlang.org/api/
 * It's only for Kotlin/Native, it's not available in Kotlin/JVM
 * The endianness is undocumented, which is a big issue. Could be big, little, or platform-specific.
 
-Why not using Java built-in `ByteBuffer` as follows:
+What about Java's built-in `ByteBuffer`? That's the closest contender by far, and it deserves a fair
+hearing. It's not merely a buffer with a pointer: it has had *absolute*, index-based accessors since
+Java 1.4, which never touch the position:
 
 ```kotlin
-val buffer = ByteBuffer.wrap(ByteArray(10))
-buffer.order(ByteOrder.LITTLE_ENDIAN)
-buffer.getLong().toULong()
+val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+val value: UInt = buffer.getInt(4).toUInt()
+buffer.putInt(4, (value + 1u).toInt())
 ```
 
-Yeah.... that also works. Yet, I'd argue that working with `ByteArray` and indexes is simpler than with a `ByteBuffer` with a pointer.
+Yeah.... that also works — bit-for-bit identically to `bytes.getUInt(4, Endian.Little)` — and it
+throws in `Float`/`Double`, slicing and off-heap buffers for free. Three differences remain:
+
+* **No unsigned types.** Every read needs a trailing `.toUInt()`/`.toULong()`, and every write a
+  `.toInt()`/`.toLong()`. Forget one and a `0xFFFFFFFF` field silently becomes `-1` — a bug rather
+  than a compile error. And for unsigned 64-bit there is no widening trick available at all: Kotlin's
+  `ULong` is the only answer the JVM has.
+* **Endianness is buffer state, not an argument.** A frame with a big-endian header and a
+  little-endian payload (more common than you'd hope) means either two wrapper buffers, or `order()`
+  calls interleaved with your reads. Here `endian` is an ordinary parameter: store it in a `val`,
+  pass it down, or pick it from a header you just parsed.
+* **A wrapper object.** `ByteBuffer.wrap()` allocates something you then have to keep alongside — or
+  instead of — the array you already have.
+
+If those three don't bother you, use `ByteBuffer`; it's free and it's in the JDK. See
+[COMPARISON.md](COMPARISON.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
+Okio, Netty, Guava, Apache Commons and others.

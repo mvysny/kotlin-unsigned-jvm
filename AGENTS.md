@@ -63,6 +63,29 @@ tests express expected bytes as hex strings, so reuse these rather than building
   `"deadbeef...".toULong(16)` in a top-level `private val` instead.
 - JVM target is 17 for both Kotlin and Java; don't raise it without also updating the CI matrix.
 
+## Ideas & their graduation
+
+Loose ideas — designs not ready to act on, refactors worth considering — live one-per-file in
+`ideas/`, named after what the idea *is* (`ideas/multiplatform.md`, never `ideas/idea1.md`). There is
+no index file; `ls ideas/` is the index. An idea file is a scratchpad, not a durable doc: write it
+freely, and it is exempt from the KDoc/doc-quality rules above because it is going to be deleted.
+
+**An idea graduates the moment it's acted on, and graduation is not done until the file is gone.**
+Before deleting, backport any lasting nugget to the durable place for that kind of nugget:
+
+| Nugget | Durable home |
+|---|---|
+| What a function does, its contract, its edge cases | KDoc in `src/main/kotlin/` — `explicitApi()` requires it anyway |
+| Usage, motivation, why you'd want this library | `README.md` |
+| Why not `ByteBuffer` / kotlinx-io / any competing library or built-in | `COMPARISON.md` |
+| A design decision, or a rejected design someone would plausibly re-propose | `DECISIONS.md`, one `D_`-slugged section each |
+| Build, test, layout or code conventions an agent must know | this file, under *Conventions that matter here* |
+| Release process | `CONTRIBUTING.md` |
+
+Nothing may linger as a stale second copy: once the code is the source of truth, the idea file goes.
+The test for a good graduation — could a maintainer who never saw the idea file still discover
+everything that mattered, in the place they'd naturally look?
+
 ## Releasing
 
 See CONTRIBUTING.md. Short form: drop `-SNAPSHOT` from `version` in `build.gradle.kts`, commit and tag with
