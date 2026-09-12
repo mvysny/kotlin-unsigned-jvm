@@ -7,8 +7,10 @@ they disagree, fix this file.
 Keep it short. Anything true of one function belongs in that function's KDoc — which
 `explicitApi()` requires and Dokka publishes — not here. This file holds only what no single symbol
 can: the direction of delegation, how the JPMS module is assembled out of two source sets, and
-where a newcomer should start reading. Cite `R_` for what must hold and `D_` for why; argue nothing
-here. The module map — one line per file — is in `AGENTS.md`, because an agent needs it every turn.
+where a newcomer should start reading. Cite `R_` for a promise and `D_` for why; argue nothing here.
+**The first entry in each section is the ruler** — later entries are trimmed to its length, never
+the other way round. The module map — one line per file — is in `AGENTS.md`, because an agent needs
+it every turn.
 
 ---
 
@@ -27,7 +29,7 @@ here. The module map — one line per file — is in `AGENTS.md`, because an age
   `getLong`/`setLong`), so no byte shuffling is float-aware and neither enum constant mentions them.
   `toRawBits` and not `toBits` (`R_no_nan_canonicalization`, `D_float_raw_bits`).
 - The six `VarHandle`s are file-private top-level `val`s, deliberately outside the enum
-  (`R_varhandles_top_level`, `D_varhandle`). They are the only JVM-specific code in the library.
+  (the `AGENTS.md` invariant, `D_varhandle`). They are the only JVM-specific code in the library.
 - Byte-sized accessors (`getByte`/`setByte`/`getUByte`/`setUByte`) and `Parts.kt` bypass `Endian`
   entirely; one byte has no byte order.
 
@@ -44,9 +46,9 @@ silently on the way down.
 `com.github.mvysny.unsigned`; `compileJava` then compiles `src/main/java/module-info.java` *alone*
 and would reject its `exports` as an empty package, so `build.gradle.kts` hands javac
 `--patch-module com.github.mvysny.unsigned=<kotlin output>`. All three spellings of the package
-must match (`R_module_package_sync`, `D_patch_module`). The `-javadoc.jar` is filled from
+must match (the `AGENTS.md` invariant, `D_patch_module`). The `-javadoc.jar` is filled from
 `dokkaGeneratePublicationHtml`, never from the `javadoc` task, which is disabled
-(`R_javadoc_jar_has_docs`, `D_dokka_html`).
+(`D_dokka_html`).
 
 ## Where to start reading
 

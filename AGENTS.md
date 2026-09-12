@@ -30,7 +30,7 @@ is needed to follow it.
 |---|---|---|
 | `README.md` | a prospective user: what the library does, the coordinates, why not `DataInputStream` / `ByteBuffer` | — |
 | `AGENTS.md` (this) | what you must not break from a distance; the module map; this table — its rules are in its header | **every turn** |
-| `design/requirements.md` | what must hold — `R_` entries, stated not argued | lazy |
+| `design/requirements.md` | the promises the README's pitch makes — `R_` entries, stated not argued, **owner-written** | lazy |
 | `design/architecture.md` | **the map** of the code as it is — delegation direction, the read/write chain, how the JPMS module is assembled; **the code is the truth** | lazy |
 | `design/decisions.md` | why this and not that — `D_` entries, roads not taken | lazy |
 | `design/comparison.md` | what the *alternatives* do — `ByteBuffer`, kotlinx-io, Okio, korlibs, Commons — descriptively, on `A_`-slugged axes | lazy |
@@ -45,11 +45,27 @@ Rules that keep the split from drifting:
 - **`decisions.md` argues, `requirements.md` states, `comparison.md` is about *them* not us,
   `architecture.md` composes and never argues.** A paragraph explaining *why* in any file but
   `decisions.md` has drifted; move it and cite the `D_`.
-- **No `D_` entry without a real fork; only decisions already taken.** Ideas, TODOs and open
-  questions go to `design/ideas/`. A shipped decision that is reversed keeps its entry as a
-  tombstone.
-- **Slugs:** `D_` decisions, `R_` requirements, `T_` tripwires (cited from the requirement's
-  *Enforced by*, defined by the check), `Q_` open questions inside `design/ideas/` only — a durable
+- **A `D_` is earned by what happened, not by having had an alternative:** it shaped what the
+  library is (reverse it and the README's first paragraph changes — the platform, the scope, the
+  accessor set), or it cost research the next person would otherwise redo, and *Rejected:* says
+  what was *done* to rule the road out. A testing library, the CI host, a version bump, a build
+  plugin: a comment at the site of the choice, never an entry. Only decisions already taken; ideas,
+  TODOs and open questions go to `design/ideas/`. A shipped decision that is reversed keeps its
+  entry as a tombstone. Nothing about `design/` itself or its tooling is an entry.
+- **An `R_` is a promise the README's pitch makes, made an official rule — and the owner writes
+  it.** An agent never adds, edits or retires one; it proposes, in conversation or as a drafted
+  entry in `design/ideas/`. The owner's ruler: allow the opposite everywhere — is it still the
+  pitched library? "A NaN keeps its payload", "`endian` always defaults to `Endian.Big`" → not the
+  same library → `R_`. "The `VarHandle`s stay top-level", "the three spellings of the module
+  package match" → a build or a benchmark breaks, the library is the same → an *invariant*: one
+  line below, named in the promise's *Enforced by*, no `R_`. "JVM target 17", "hex literals go
+  through `toULong(16)`" → one convention line or one KDoc block.
+- **An invariant is one line under *Invariants*, and nothing more:** the rule, at most one clause
+  of consequence, `T_<slug>` if tripwired, `See D_<slug>` only when a `D_` exists. A line that will
+  not fit belongs in the symbol's KDoc or in its `D_`.
+- **Slugs:** `D_` decisions, `R_` requirements, `T_` tripwires (cited from a requirement's
+  *Enforced by* or an invariant line here, defined by the check), `Q_` open questions inside
+  `design/ideas/` only — a durable
   doc never cites a `Q_`. This project declares one more: **`A_` comparison axes**, defined and
   used only in `design/comparison.md`. Underscores throughout, backticked in prose, cited by slug
   never by position; `grep '^## D_' design/decisions.md` is the index.
@@ -64,15 +80,18 @@ An idea graduates the moment it is acted on, and graduation is not done until it
 An idea file is a scratchpad, exempt from the doc-quality rules above because it is going to be
 deleted. Where the lasting nuggets land:
 
-- the choice made + the alternatives rejected → a `D_` entry in `design/decisions.md`
-- something that must hold from now on → an `R_` entry in `design/requirements.md`
+- the choice made + the alternatives rejected → a `D_` entry in `design/decisions.md` if it passes
+  the gate above; otherwise a comment at the site of the choice
+- a promise the pitch makes that must hold from now on → a proposal for the owner, who writes the
+  `R_` entry in `design/requirements.md`; the invariant that keeps one → a line below
 - a new file, or a changed responsibility → one line in the module map below
 - how the pieces work together — the delegation chain, a flow crossing several files → `design/architecture.md`
 - what a competing library or built-in does → `design/comparison.md`, on its `A_` axes
 - what one function does, its contract, its edge cases → its KDoc; `explicitApi()` requires one anyway
 - usage, motivation, why you'd want this library → `README.md`
 - the release process → `CONTRIBUTING.md`
-- a cross-cutting invariant ("never …") → this file
+- a cross-cutting invariant ("never …") → one line under *Invariants*: the rule, `T_<slug>` if
+  tripwired, `See D_<slug>` if a `D_` exists
 - work deferred *as a consequence of a logged decision* → that entry's *Consequences*
 
 *Layout seeded from the `design-docs` and `agents-md` skills (mvysny, `~/.claude/skills`); this
@@ -80,17 +99,19 @@ project needs nothing from them.*
 
 ## Invariants
 
-- **The six byte-array-view `VarHandle`s stay top-level `private val`s in `Endian.kt`.** Folding
-  them into the enum as instance fields compiles, passes every test, and silently makes every
-  accessor slower than the shift-or code they replaced. See `R_varhandles_top_level`, `D_varhandle`.
-- **`setFloat`/`setDouble` write through `toRawBits()`, never `toBits()`.** The latter rewrites every
-  NaN to the canonical pattern, which is non-conformance for every format that specifies bits — and
-  the swap is invisible under test, because `kotlin.test.expect` canonicalizes too. Assert NaNs via
-  `.toRawBits()`. See `R_no_nan_canonicalization`, `D_float_raw_bits`.
+- **The six byte-array-view `VarHandle`s stay top-level `private val`s in `Endian.kt`** — inside the
+  enum they compile, pass every test and are slower than the shifts they replaced.
+  `T_varhandle_top_level`. See `D_varhandle`.
+- **`setFloat`/`setDouble` write through `toRawBits()`, never `toBits()`** — and assert NaNs via
+  `.toRawBits()`, since `kotlin.test.expect` canonicalizes too. `T_float_raw_bits`. See
+  `R_no_nan_canonicalization`, `D_float_raw_bits`.
 - **The JPMS module name, its `exports` and the `--patch-module` argument all name
-  `com.github.mvysny.unsigned`.** When they drift javac says "package is empty or does not exist",
-  and the tempting fix is an empty `Dummy.java` — which lies. See `R_module_package_sync`,
-  `D_patch_module`.
+  `com.github.mvysny.unsigned`** — when they drift javac says "package is empty or does not exist",
+  and the tempting fix is an empty `Dummy.java`. `T_module_package_sync`. See `D_patch_module`.
+- **The `-javadoc.jar` is filled from `dokkaGeneratePublicationHtml`; the `javadoc` task stays
+  disabled** — it has nothing to read but `module-info.java`, and Dokka's *javadoc* renderer drops
+  all 24 `@throws` tags. Either way the jar ships broken and nothing fails.
+  `T_javadoc_jar_from_dokka`. See `D_dokka_html`.
 
 ## Module map
 
@@ -141,9 +162,5 @@ Single source set; no nested `AGENTS.md`. One line per file:
 
 ## Working on this codebase
 
-- **Don't re-enable the `javadoc` task, and don't switch the jar back to Dokka's *javadoc* format.**
-  The task has nothing to read but `module-info.java`; the javadoc renderer drops all 24 `@throws`
-  tags. Either way the jar ships broken and nothing fails. See `R_javadoc_jar_has_docs`,
-  `D_dokka_html`.
 - **`bin/`, `.classpath`, `.project`, `.settings/`** are Eclipse/Buildship output and **`build/`,
   `.gradle/`** are Gradle output — all git-ignored, none of them sources. Ignore them when searching.

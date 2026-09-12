@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# This project's own mechanical invariants — the T_ checks cited from design/requirements.md.
+# This project's own mechanical invariants — the T_ checks cited from the AGENTS.md invariant
+# lines and from design/requirements.md.
 # The generic doc-layer checks (slug resolution, AGENTS.md caps, the CLAUDE.md shim) are the
 # other script: design/verify_design_tripwires.sh.
 #
@@ -23,22 +24,22 @@ BUILD=build.gradle.kts
 # The six byte-array-view VarHandles must be top-level `private val`s: C2 folds a VarHandle access
 # into one instruction only while the handle is a static final field. Moving them into the enum as
 # instance fields compiles, passes every test, and is slower than the shifts they replaced.
-# See R_varhandles_top_level in design/requirements.md, D_varhandle.
+# See the AGENTS.md invariant, D_varhandle.
 n=$(grep -c '^private val [A-Z_]*: VarHandle =$' "$ENDIAN" || true)
-[ "$n" -eq 6 ] || err "T_varhandle_top_level: $ENDIAN declares $n top-level \`private val …: VarHandle\`, expected 6 — they must NOT move into the enum (R_varhandles_top_level, D_varhandle)"
+[ "$n" -eq 6 ] || err "T_varhandle_top_level: $ENDIAN declares $n top-level \`private val …: VarHandle\`, expected 6 — they must NOT move into the enum (AGENTS.md invariant, D_varhandle)"
 
 # --- T_module_package_sync ----------------------------------------------------
 # The JPMS module name, its exports, and the --patch-module target must name the same package,
 # or javac rejects module-info.java with "package is empty or does not exist".
-# See R_module_package_sync in design/requirements.md, D_patch_module.
+# See the AGENTS.md invariant, D_patch_module.
 pkg_module=$(sed -n 's/^module \([a-z0-9._]*\) {.*/\1/p' "$MODULE_INFO")
 pkg_exports=$(sed -n 's/^ *exports \([a-z0-9._]*\);.*/\1/p' "$MODULE_INFO")
 pkg_patch=$(sed -n 's/.*"--patch-module", "\([a-z0-9._]*\)=.*/\1/p' "$BUILD")
 for got in "$pkg_exports" "$pkg_patch"; do
-  [ -n "$got" ] || err "T_module_package_sync: could not find the package name in $MODULE_INFO / $BUILD — did the syntax change? (R_module_package_sync)"
+  [ -n "$got" ] || err "T_module_package_sync: could not find the package name in $MODULE_INFO / $BUILD — did the syntax change? (AGENTS.md invariant)"
 done
-[ "$pkg_module" = "$pkg_exports" ] || err "T_module_package_sync: module is \`$pkg_module\` but exports \`$pkg_exports\` (R_module_package_sync, D_patch_module)"
-[ "$pkg_module" = "$pkg_patch" ]   || err "T_module_package_sync: module is \`$pkg_module\` but --patch-module targets \`$pkg_patch\` (R_module_package_sync, D_patch_module)"
+[ "$pkg_module" = "$pkg_exports" ] || err "T_module_package_sync: module is \`$pkg_module\` but exports \`$pkg_exports\` (AGENTS.md invariant, D_patch_module)"
+[ "$pkg_module" = "$pkg_patch" ]   || err "T_module_package_sync: module is \`$pkg_module\` but --patch-module targets \`$pkg_patch\` (AGENTS.md invariant, D_patch_module)"
 
 # --- T_endian_default_big -----------------------------------------------------
 # Every endian-taking accessor defaults to Endian.Big; one overload defaulting to Little would
@@ -62,11 +63,11 @@ n=$(grep -c 'toRawBits()' "$ENDIAN" || true)
 # Maven Central never looks inside the -javadoc.jar, so an empty one fails nothing and shipped
 # unnoticed in every release until 0.4. The jar is fed from Dokka's HTML renderer — its javadoc one
 # silently drops every @throws tag — and `javadoc` stays disabled.
-# See R_javadoc_jar_has_docs in design/requirements.md, D_dokka_html.
+# See the AGENTS.md invariant, D_dokka_html.
 grep -q 'from(tasks\.dokkaGeneratePublicationHtml)' "$BUILD" \
-  || err "T_javadoc_jar_from_dokka: $BUILD no longer fills javadocJar from dokkaGeneratePublicationHtml — the published jar would hold only a manifest, or would lose the @throws tags to the javadoc renderer (R_javadoc_jar_has_docs, D_dokka_html)"
+  || err "T_javadoc_jar_from_dokka: $BUILD no longer fills javadocJar from dokkaGeneratePublicationHtml — the published jar would hold only a manifest, or would lose the @throws tags to the javadoc renderer (AGENTS.md invariant, D_dokka_html)"
 grep -q 'tasks\.javadoc {' "$BUILD" && grep -q 'enabled = false' "$BUILD" \
-  || err "T_javadoc_jar_from_dokka: $BUILD no longer disables the \`javadoc\` task — it has nothing to read but module-info.java (R_javadoc_jar_has_docs, D_dokka_html)"
+  || err "T_javadoc_jar_from_dokka: $BUILD no longer disables the \`javadoc\` task — it has nothing to read but module-info.java (AGENTS.md invariant, D_dokka_html)"
 
 if [ "$fail" -eq 0 ]; then
   echo "project tripwires: ok"

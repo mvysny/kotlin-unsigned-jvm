@@ -6,11 +6,18 @@ what the alternatives do (`comparison.md`).
 
 - Cite an entry by slug — `D_<slug>` — never by position. `grep '^## D_' design/decisions.md`
   is the index; there is no table of contents.
-- **No entry without a real fork.** Nothing seriously considered and rejected → not a decision.
+- **An entry is earned by what happened, not by having had an alternative:** the decision shaped
+  what the library is (reverse it and the README's first paragraph changes — the platform, the
+  scope, the accessor set), or it cost research the next person would otherwise redo, and
+  *Rejected:* then says what was *done* to rule the road out — measured, tried, read. The testing
+  library, the CI host, a version bump, a build plugin: two sentences in a comment at the site of
+  the choice, never an entry. Nothing about `design/` itself or its tooling is an entry.
 - Entries are mutable: refine in place, newest first. A *shipped* decision that is reversed
   keeps its entry as a tombstone (`Status: Superseded by D_<slug>`); the replacement is written fresh.
 - Shape: `## D_<slug> — <title> (<decided date>)`, then **Status**, the context and the decision,
   one **Rejected: …** paragraph per alternative, and the consequences.
+- **The oldest entry — at the bottom — is the ruler**: later entries are trimmed to its length,
+  never the other way round.
 
 ---
 
@@ -54,8 +61,8 @@ functions.
 **Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the
 task to look at is `dokkaGeneratePublicationHtml`.
 
-**Consequences.** `R_bounds_contract_published` and its tripwire are retired: the tags now reach the
-jar on their own, so nothing pins the `Endian` class doc's out-of-range prose bullet — which stays,
+**Consequences.** The requirement that pinned the out-of-range prose, and its tripwire, are retired:
+the tags now reach the jar on their own, so nothing pins that prose bullet — which stays,
 because a contract shared by every accessor belongs on the class doc regardless. Anyone wanting
 javadoc `-link` against this library is worse off, per the table; accepted.
 
@@ -274,39 +281,6 @@ this library targets carry it.
 **Consequences.** If this is ever revived — CBOR is the likeliest trigger — it gets its own idea file,
 and the name to reach for is `getHalf` / `setHalf`: it sidesteps the `SFLOAT` collision and reads as a
 width rather than as a claim about the return type.
-
-## D_design_docs — Adopt the `design/` doc layer, with `architecture.md` as the assembled picture (2026-09-12)
-
-**Status:** Accepted; installed 2026-09-12.
-
-Before this, the prose lived in shouting UPPERCASE files at the root — `DECISIONS.md`,
-`COMPARISON.md`, a root `ideas/` — and `AGENTS.md` carried a "Layout and how the pieces fit"
-section that was really architecture prose plus a graduation table, paid for on every turn of every
-session. Nothing stated *what must hold*: the two invariants that are genuinely easy to break from a
-distance (the top-level `VarHandle`s, the three-way JPMS package name) lived only as paragraphs
-inside `D_varhandle` and `D_patch_module`, where an agent editing `build.gradle.kts` would not look.
-
-Rationale and reference move under `design/` — `decisions.md` (`D_`), `requirements.md` (`R_`),
-`architecture.md`, `comparison.md`, `ideas/` — and `AGENTS.md` keeps only invariants, the module
-map and the doc map, under the 34 KB cap its header states.
-
-The assembled picture is **`architecture.md`, a description**: `kotlin { explicitApi() }` forces a
-KDoc block on every public declaration and Dokka publishes those blocks as the `-javadoc.jar`
-(`D_dokka_html`), so per-symbol truth is complete in the source. When `architecture.md` and the
-code disagree, the file is what gets fixed.
-
-**Rejected: keeping the rationale in `AGENTS.md`.** It is loaded on every turn; the `D_varhandle`
-benchmark table alone is a third of the file's budget, and compressing it into a bullet would make
-a second copy that drifts from the entry it points at.
-
-**Rejected: `solution.md`.** That is for a project whose sources are written *against* a spec — an
-install script, thin glue over an upstream product — where a mismatch means the code is wrong. Here
-there are three Kotlin files of ~300 lines whose KDoc is the published API documentation; a spec
-would be a second description of them, and the second copy would lose.
-
-**Consequences.** Every `D_` / `R_` / `T_` slug cited anywhere must resolve —
-`design/verify_design_tripwires.sh` and `design/verify_project_tripwires.sh` check it, and CI runs
-both.
 
 ## D_patch_module — JPMS: patch the Kotlin output into the module, don't fake the package (2026-09-12)
 

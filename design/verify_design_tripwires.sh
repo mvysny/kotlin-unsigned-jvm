@@ -18,7 +18,13 @@ DESIGN=design
 [ -d "$DESIGN" ] || { err "no $DESIGN/ folder"; exit 1; }
 
 # Tracked text files only (grep -I skips binaries). NUL-safe.
-tracked() { git ls-files -z; }
+# Listed once, and an empty listing is a failure: a `git ls-files` that fails inside a loop below
+# — no git, an unreadable checkout — would otherwise leave every check with nothing to walk, and
+# a vacuous pass is indistinguishable from a green one.
+files=()
+while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z)
+[ "${#files[@]}" -gt 0 ] || { err "git ls-files listed nothing in $PWD"; exit 1; }
+tracked() { printf '%s\0' "${files[@]}"; }
 
 # --- cited slug → heading -----------------------------------------------------
 # $1 = prefix letter, $2 = the file whose "## <prefix>_<slug>" headings define them.

@@ -1,82 +1,62 @@
 # Requirements
 
-What must hold — of the library's behaviour and of the artifacts it publishes, not of the
-environment it runs in. One entry per requirement. A requirement *states*; it never argues: the
-fork behind it, if there is one, is a `D_` entry it cites.
+What must hold — the promises the README's pitch makes about this library, as official rules. One
+entry per promise. A requirement *states*; it never argues: the fork behind it, if there is one, is
+a `D_` entry it cites.
 
+- **Owner-written.** An agent never adds, edits or retires an entry here; it proposes one — in
+  conversation, or as a drafted entry in `design/ideas/<slug>.md` — and the owner moves it in.
+- A requirement is a promise the README's pitch makes — what this library does differently, or
+  better, than `ByteBuffer` and the rest of `design/comparison.md`. The owner's ruler for a
+  proposal: **allow the opposite everywhere — is it still the pitched library?** "A NaN keeps its
+  payload", "`endian` always defaults to `Endian.Big`" → not the same library → an entry. "The
+  `VarHandle`s stay top-level", "the three spellings of the module package match" → a build or a
+  benchmark breaks, the library is the same → not an entry: an *invariant* — the rule that *keeps*
+  a promise — is an `AGENTS.md` one-liner, named here under *Enforced by*; an API semantic is its
+  KDoc and its `D_`; "JVM target 17" is one build line.
 - Cite by slug — `R_<slug>`. `grep '^## R_' design/requirements.md` is the index.
-- Slug only what is referenced from elsewhere.
-- Shape: `## R_<slug> — <the requirement, one sentence>`, then **Status** (Active, or Retired
-  <date> — see `D_<slug>`), **Why** (one paragraph), **Enforced by** (a test, a compiler setting,
-  a tripwire cited as `T_<slug>` — this line is that slug's home — or "review only"), **See**
-  (the `D_` entries behind it).
-- A retired requirement stays as a tombstone. A requirement that wants a *Rejected:* section is a
-  decision — move it to `decisions.md`.
+- Shape: `## R_<slug> — <the promise in its operational form, one sentence>`, then **Status**
+  (Active, or Retired <date> — why it stopped being a promise), **If violated** (the observable
+  failure, one or two sentences — not the argument, which is the `D_`'s), **Enforced by** (a test,
+  a compiler setting, a tripwire cited as `T_<slug>` — this line is that slug's home — or "review
+  only"), **See** (the pitch passage and the `D_` entries behind it).
+- A retired promise stays as a tombstone; an entry that was never a promise — an invariant filed
+  here by mistake — is deleted outright once its rule has a home. A requirement that wants a
+  *Rejected:* section is a decision — move it to `decisions.md`.
 - **The first entry is the ruler**: later entries are trimmed to its length, never the other way
   round.
 
 ---
 
-## R_varhandles_top_level — The six byte-array-view `VarHandle`s are top-level `private val`s in `Endian.kt`
+## R_unsigned_first_class — Every width has a true unsigned accessor returning a Kotlin unsigned type; the caller never converts
 
 **Status:** Active.
-**Why.** C2 folds a `VarHandle` access into a single machine instruction only while the handle is
-a `static final` field, which in Kotlin means a top-level `val`. Moving them into `Endian` as
-constructor-injected instance fields is the obvious tidy-up and is the trap: it compiles, passes
-every test, and silently degrades every accessor to a generic invocation *slower* than the
-hand-rolled shifts the handles replaced. The damage is invisible without reading bytecode.
-**Enforced by.** `T_varhandle_top_level`; confirm by hand with `javap -c` — the calls must read
-`invokevirtual VarHandle.get:([BI)I`, never `:([BI)Ljava/lang/Object;`.
-**See.** `D_varhandle`.
-
-## R_module_package_sync — The JPMS module name, its `exports`, and the `--patch-module` target all name `com.github.mvysny.unsigned`
-
-**Status:** Active.
-**Why.** `module-info.java` is the only Java source; javac compiles it without seeing the Kotlin
-output as part of the module, so `build.gradle.kts` patches that output in by package name. If the
-three drift apart the build fails with "package is empty or does not exist", and the tempting fix
-is to re-add an empty `Dummy.java` rather than to repair the patch.
-**Enforced by.** `T_module_package_sync`.
-**See.** `D_patch_module`.
+**If violated.** A read comes back as a signed `Int` needing a trailing `.toUInt()` at the call
+site — forget one and a `0xFFFFFFFF` field silently becomes `-1`, which is the bug the README's
+"Motivation" says this library exists to make impossible. A width without its unsigned counterpart
+sends that width's callers back to `ByteBuffer`'s conversion dance, and at 64 bits there is no
+widening trick to send them to at all.
+**Enforced by.** Review only — `ByteArrayTest` covers every unsigned accessor that exists, but
+nothing fails if a new width ships signed-only.
+**See.** README "Motivation" (the `ByteBuffer` contrast), `D_jvm_only`.
 
 ## R_endian_defaults_big — Every `ByteArray` accessor that takes an `endian` parameter defaults it to `Endian.Big`
 
 **Status:** Active.
-**Why.** The default is the API's one piece of global consistency: a caller who omits `endian`
-anywhere must get the same byte order everywhere, and a single overload defaulting to `Little`
-would be a silent data-corruption bug at every call site that trusted the pattern. Byte-sized
-accessors take no `endian` at all, since endianness is meaningless for one byte.
+**If violated.** A caller who omits `endian` gets one byte order at most call sites and another at
+the odd one out — silent data corruption at every site that trusted the pattern, with nothing wrong
+to see in the source. Byte-sized accessors take no `endian` at all, since endianness is meaningless
+for one byte.
 **Enforced by.** `T_endian_default_big`; `ByteArrayTest` asserts the default on each width.
+**See.** README "The `endian` value always defaults to `Endian.Big`".
 
 ## R_no_nan_canonicalization — The float accessors write the exact bits they are given: `toRawBits`, never `toBits`
 
 **Status:** Active.
-**Why.** `toBits()` rewrites every NaN to the canonical `0x7fc00000` / `0x7ff8000000000000`, and
-every binary format that carries a float specifies a bit pattern — so canonicalizing on write is
-non-conformance, not a cosmetic difference, and some protocols use NaN payloads as sentinels. The
-swap compiles, and almost no test catches it: `kotlin.test.expect` boxes and `java.lang.Float.equals`
-canonicalizes too, so an assertion written the obvious way passes either way. The promise is
-one-directional — nothing here canonicalizes; a payload surviving a *round trip* is the platform's
-business.
+**If violated.** A NaN written through `setFloat`/`setDouble` lands in the array canonicalized to
+`0x7fc00000` / `0x7ff8000000000000` — non-conformance for every binary format that specifies a bit
+pattern, and a destroyed sentinel for the protocols that carry a payload there. The promise is
+one-directional: nothing here canonicalizes; what survives a round trip through a `Float` *variable*
+is the platform's business.
 **Enforced by.** `T_float_raw_bits`.
-**See.** `D_float_raw_bits`.
-
-## R_javadoc_jar_has_docs — The published `-javadoc.jar` contains the rendered KDoc, not just a manifest
-
-**Status:** Active.
-**Why.** Maven Central requires a `-javadoc.jar` but never looks inside, so an empty one fails
-nothing — every release up to 0.4 shipped one and nobody noticed. The `javadoc` task cannot fill it
-(it reads Java sources, and there are none but `module-info.java`), so the jar is fed from Dokka's
-HTML renderer and `javadoc` stays disabled.
-**Enforced by.** `T_javadoc_jar_from_dokka`.
-**See.** `D_dokka_html`.
-
-## R_bounds_contract_published — The out-of-range contract reaches the published javadoc jar, not only the `@throws` tags
-
-**Status:** Retired 2026-09-12 — see `D_dokka_html`.
-**Why.** It pinned the `Endian` class doc's prose bullet while that bullet was the only statement of
-the contract reaching the jar — Dokka's **javadoc** renderer dropped the 24 `@throws` tags silently.
-`D_dokka_html` fills the jar from the HTML renderer, which renders them, so the tags now meet this
-on their own. The bullet stays; nothing pins it.
-**Enforced by.** Nothing — its tripwire was deleted along with the requirement.
-**See.** `D_dokka_html`, `D_kdoc_voice`.
+**See.** README "The bits are never rewritten", `D_float_raw_bits`.
