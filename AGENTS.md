@@ -72,7 +72,7 @@ tests express expected bytes as hex strings, so reuse these rather than building
 ## Ideas & their graduation
 
 Loose ideas — designs not ready to act on, refactors worth considering — live one-per-file in
-`ideas/`, named after what the idea *is* (`ideas/multiplatform.md`, never `ideas/idea1.md`). There is
+`ideas/`, named after what the idea *is* (`ideas/modbus-word-order.md`, never `ideas/idea1.md`). There is
 no index file; `ls ideas/` is the index. An idea file is a scratchpad, not a durable doc: write it
 freely, and it is exempt from the KDoc/doc-quality rules above because it is going to be deleted.
 

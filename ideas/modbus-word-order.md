@@ -120,8 +120,9 @@ case worth being deliberate about is 64-bit: pin `GH EF CD AB`-style vectors exp
   this library as it stands and worked fully, so whatever Renogy does with its 32-bit fields
   (cumulative generation, total amp-hours), `Endian.Big` handled it. Motivation here is the
   ecosystem, not the hardware — the same positioning-vs-demand distinction as
-  [[float-double-accessors]] and [[multiplatform]], except that here there is one fewer argument for
-  acting, since the *other* two at least close cells competitors have filled.
+  [[float-double-accessors]] and the multiplatform idea (declined on exactly that ground; see
+  `D_jvm_only` in DECISIONS.md), except that here there is one fewer argument for acting, since the
+  *other* two at least close cells competitors have filled.
 - Does a general-purpose byte-array library want to carry a quirk whose only real constituency is one
   industrial protocol? Counter-argument in *Why this library* above; the decision should be recorded
   as `D_word_order` in DECISIONS.md either way, because "why does `Endian` have four values?" is a

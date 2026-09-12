@@ -85,3 +85,7 @@ throws in `Float`/`Double`, slicing and off-heap buffers for free. Three differe
 If those three don't bother you, use `ByteBuffer`; it's free and it's in the JDK. See
 [COMPARISON.md](COMPARISON.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
 Okio, Netty, Guava, Apache Commons and others.
+
+Not everything on that list is a competitor. kotlinx-io in particular solves a different shape of
+problem — streaming and segmented buffers — and composes with this one rather than replacing it: read
+the frame with kotlinx-io, then index into the resulting `ByteArray` with this.

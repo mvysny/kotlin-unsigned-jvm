@@ -11,8 +11,10 @@ which is exactly the kind of thing this library exists to stop you doing.
 Notably *not* a gap for Okio, which also has no float support — so we'd be leapfrogging it.
 
 **But be honest about what kind of gap it is.** This is *positioning*, not demand. See
-[Is this actually our gap?](#is-this-actually-our-gap) below — same character as [[multiplatform]],
-and both idea files should say so rather than implying users are asking.
+[Is this actually our gap?](#is-this-actually-our-gap) below. The multiplatform idea had exactly the
+same character and was declined for it (`D_jvm_only` in DECISIONS.md); this file should say so rather
+than implying users are asking. The difference in this one's favour is that the cost is a few lines of
+`fromBits`/`toRawBits` delegation, not a second core implementation and a rename.
 
 ## How binary formats actually serialize floats
 
@@ -98,10 +100,9 @@ That's ~8 functions plus KDoc. No new byte-shuffling logic, so the existing `End
 
   So the contract to document is: **this library never canonicalises; `setFloat` writes exactly the
   bits of the `Float` you hand it.** Not "NaN payloads survive a round trip through the byte array",
-  which is a platform promise. This wording also survives [[multiplatform]] unchanged — on JS a
-  `Float` is a double at runtime and engines canonicalise NaN aggressively, so the stronger promise
-  would be false there on day one. The multiplatform file lists this as an open question; consider it
-  closed in favour of the weaker wording.
+  which is a platform promise. Word it that way even though we are JVM-only (`D_jvm_only`): it costs
+  nothing here and it is the wording that would survive a port. On JS a `Float` is a double at runtime
+  and engines canonicalise NaN aggressively, so the stronger promise would be false there on day one.
 
 - **Put them on `Endian`, not only in `ByteArrays.kt`.** There is no byte-shuffling to dispatch, so
   it's a fair question. Yes anyway: `Endian`'s non-abstract members are *already* pure
@@ -230,8 +231,9 @@ them argumentative rather than factual, against ~8 functions of code:
 dimension, so "why does an unsigned library have floats?" is exactly the objection someone
 re-proposes later. The answer is that the library is really *Dart's `ByteData` for Kotlin* and
 `unsigned` in the name describes what was missing elsewhere, not the scope — a reading COMPARISON.md
-already committed to by making `A_floats` one of its axes. Note also that [[multiplatform]]
-contemplates new coordinates anyway; that's the one moment the name could stop fighting the scope.
+already committed to by making `A_floats` one of its axes. A rename would be the one moment the name
+could stop fighting the scope, but `D_jvm_only` declined the multiplatform move that would have
+forced one, so the name is staying as it is. Live with it, or argue the rename on its own merits.
 
 KDoc voice: keep the near-verbatim Dart phrasing the rest of the API uses ("The `byteOffset` must be
 non-negative, and `byteOffset + 4` must be less than or equal to the length of this object"), plus
@@ -242,7 +244,7 @@ one sentence on the raw-bits behaviour.
 - Does this change the "mimics Dart's `ByteData`" framing in the README from aspiration to fact? If
   we add floats, the only remaining `ByteData` feature we lack is the typed-list views
   (`Float32List` etc.), which are a different concept entirely and arguably out of scope.
-- Sequencing against [[multiplatform]]: no conflict — `fromBits`/`toRawBits` are common stdlib, so
-  floats-first is strictly better (one more filled cell going into the rename). Do floats first.
+- Sequencing against multiplatform: moot, that one is declined (`D_jvm_only`). If it is ever revived,
+  there is still no conflict — `fromBits`/`toRawBits` are common stdlib, so floats-first stays right.
 - 24-bit accessors are the *other* gap COMPARISON.md names. Deliberately not this file, and there's
   no idea file for it yet. Is it on the roadmap at all?

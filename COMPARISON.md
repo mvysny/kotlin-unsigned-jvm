@@ -276,6 +276,7 @@ without restructuring anything.
 - **No 24-bit.** Netty and korlibs both have it; 24-bit fields do turn up in protocol work.
 - **JVM only.** kotlinx-io, Okio and korlibs are all multiplatform. If you ever want this code on
   Native or JS, this library is a dead end — and the `-jvm` in the artifact name commits to that.
+  This is deliberate and was weighed; see `D_jvm_only` in [DECISIONS.md](DECISIONS.md).
 - **Bus factor of one.** A single-maintainer micro-library is a real, if small, supply-chain
   consideration next to `ByteBuffer` (free, forever) or Okio.
 - **Nothing else.** No slicing, no bulk copy, no varints, no strings, no off-heap. It is deliberately
@@ -310,10 +311,11 @@ If you do keep it, the changes that would most improve the case for its existenc
 1. **Add `getFloat`/`setFloat`/`getDouble`/`setDouble`.** Closes the most-cited gap for a few lines
    of `Float.fromBits` / `toRawBits` delegation, and completes the Dart `ByteData` parity the README
    claims.
-2. **Reconsider the JVM-only framing.** The logic is pure Kotlin with no JVM API in it — this could be
-   a multiplatform library almost verbatim, which would make it the only random-access unsigned
-   `ByteArray` API in Kotlin that returns proper unsigned types on every platform. That's a much
-   stronger niche than "JVM-only convenience over `ByteBuffer`".
+2. ~~**Reconsider the JVM-only framing.**~~ Going multiplatform would make this the only random-access
+   unsigned `ByteArray` API in Kotlin returning proper unsigned types on every platform — a much
+   stronger niche than "JVM-only convenience over `ByteBuffer`". Weighed and declined: `D_jvm_only` in
+   [DECISIONS.md](DECISIONS.md). Note also that since `D_varhandle` the logic is no longer pure
+   Kotlin, so this is no longer the near-verbatim move it once was.
 3. **Say all this in the README.** The current motivation section argues against `Data*Stream`,
    Kotlin/Native and a strawman `ByteBuffer` (relative reads with a pointer), but doesn't address
    `ByteBuffer`'s absolute accessors, which are the genuine competitor. Making the unsigned-typing

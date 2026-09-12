@@ -87,9 +87,9 @@ building in `Int`/`Long` rather than through `UInt`/`ULong` reads better, but th
 round-trips were already free (inline value classes compile to `and 0xFF`), so it buys nothing
 measurable. The cleanup is worth having only if the `VarHandle`s are ever backed out.
 
-The cost is that `Endian.kt` now names a JVM API, where before all three source files were pure Kotlin —
-see `ideas/multiplatform.md`, which this demotes from a file move to a `jvmMain` actual over a shift-or
-`commonMain` fallback.
+The cost is that `Endian.kt` now names a JVM API, where before all three source files were pure Kotlin. That
+demotes a hypothetical multiplatform port from a file move to a `jvmMain` actual over a shift-or `commonMain`
+fallback, and is one of the three costs weighed in `D_jvm_only`.
 
 ## `D_dokka_javadoc` — Dokka fills the javadoc jar; the `javadoc` task is disabled
 
@@ -111,3 +111,46 @@ projects resolve. Dokka's HTML format is prettier but is not a drop-in for that.
 
 **Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the task to look
 at is `dokkaGeneratePublicationJavadoc`.
+
+## `D_jvm_only` — stay JVM-only; multiplatform is deferred, not foreclosed
+
+The niche is real: nothing in Kotlin offers random access into a plain `ByteArray` returning true unsigned
+types on every platform (kotlinx-io and Okio are cursors, korlibs widens to `Int`/`Long`, the Kotlin/Native
+stdlib is experimental with undocumented endianness — see the `A_multiplatform` row in
+[COMPARISON.md](COMPARISON.md)). It is also *empty*, and this library is the obvious thing to fill it with.
+Rejected anyway, as of 2026-09-12: the JVM is the only platform this is shipped on, so the argument is
+positioning, not need — and the costs are recurring while the benefit is speculative.
+
+What it would actually cost:
+
+* **Two implementations of the core, permanently.** `D_varhandle` is JVM-only, so `Endian` becomes the one
+  `expect`/`actual` split — the `VarHandle` version as the `jvmMain` actual, the shift-or arithmetic (git
+  still has it at `6d611c1`) as `commonMain`. That duplicates the one file where an off-by-one is easiest to
+  write and hardest to spot. `ByteArrays.kt` and `Parts.kt` still move verbatim; they are pure Kotlin.
+* **`module-info.java` inside a KMP `jvm()` target.** `D_patch_module`'s `--patch-module` path points at
+  `sourceSets.main.output` and would have to follow the Kotlin output wherever the KMP plugin puts it, across
+  plugin versions. This is the fiddliest part of the whole change.
+* **The artifact name.** A KMP build appends the target name, so the JVM artifact would publish as
+  `kotlin-unsigned-jvm-jvm`, and `-jvm` is baked into the group id too. Three ways out, none free: new
+  coordinates (`com.github.mvysny.kotlin-unsigned:kotlin-unsigned`) with the old artifact frozen; keep the
+  coordinates and override the JVM `artifactId` so existing build files still resolve, at the cost of a
+  permanently confusing group id; or publish both and deprecate the old one over a release or two.
+
+**Rejected reasoning: "the CI matrix has to grow to x86 / ARM / …".** True of something like the Native
+stdlib's `getIntAt`, which is a raw memory reinterpret — that is exactly why its endianness is undocumented.
+It is *not* true here. The `commonMain` implementation reads `array[i]` one byte at a time and shift-ors, so
+host endianness never enters the expression and no multi-byte load ever happens: `linuxArm64` cannot disagree
+with `linuxX64`. The axis that does carry real risk is **JS**, where `Long`/`ULong` are emulated and the
+64-bit paths would be running for the first time. That is one extra runner, not a multiplied matrix. So CPU
+architecture is not a reason to decline — the three costs above are.
+
+**If this is ever revisited, the testing shape to use:** keep the shift-or path as `internal` *common* code
+and let the JVM `actual` delegate to the `VarHandle`s, so the JVM suite can run the full battery against both
+implementations. Native and JS CI then need only a smoke test, and the duplicate-core cost above drops
+sharply.
+
+Deferring is cheap because nothing here is a one-way door: the code is still migration-ready, and the day a
+user actually asks for Native or JS, the rename has a motivation instead of being churn. The one cost that
+does grow with time is the coordinates — each release adds users pinned to the `-jvm` name — but the
+`artifactId` override above is a real escape hatch, and Maven Central relocation POMs exist. Not enough to
+justify renaming today.
