@@ -5,7 +5,7 @@ Please feel free to open bug reports to discuss new features; PRs are welcome as
 
 ## Tests
 
-Uses JUnit 5. Simply run `./gradlew test` to run all tests.
+Uses JUnit. Simply run `./gradlew test` to run all tests.
 
 # Releasing
 
