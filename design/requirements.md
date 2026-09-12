@@ -65,21 +65,18 @@ business.
 
 **Status:** Active.
 **Why.** Maven Central requires a `-javadoc.jar` but never looks inside, so an empty one fails
-nothing — every release from the start shipped one and nobody noticed. The `javadoc` task cannot
-fill it (it reads Java sources, and there are none but `module-info.java`), so the jar is fed from
-Dokka and `javadoc` stays disabled.
+nothing — every release up to 0.4 shipped one and nobody noticed. The `javadoc` task cannot fill it
+(it reads Java sources, and there are none but `module-info.java`), so the jar is fed from Dokka's
+HTML renderer and `javadoc` stays disabled.
 **Enforced by.** `T_javadoc_jar_from_dokka`.
-**See.** `D_dokka_javadoc`.
+**See.** `D_dokka_html`.
 
 ## R_bounds_contract_published — The out-of-range contract reaches the published javadoc jar, not only the `@throws` tags
 
-**Status:** Active.
-**Why.** `@throws` is a standard KDoc tag and the accessors use it, but Dokka's **javadoc** renderer
-drops it silently — it survives Dokka's HTML renderer, and `@param` / `@return` survive both. So the
-tags document the contract for IDE and source readers (who get it from the sources jar) while the
-`-javadoc.jar` shows nothing: the same shape of hole as an empty javadoc jar, failing nothing and
-shipping unnoticed. The `Endian` class doc states the contract in prose, which does render, so the
-published artifact states it once rather than nowhere. Kotlin has no checked exceptions, so between
-them these are the only exception contract a caller gets.
-**Enforced by.** `T_endian_states_bounds`.
-**See.** `D_kdoc_voice`, `D_dokka_javadoc`.
+**Status:** Retired 2026-09-12 — see `D_dokka_html`.
+**Why.** It pinned the `Endian` class doc's prose bullet while that bullet was the only statement of
+the contract reaching the jar — Dokka's **javadoc** renderer dropped the 24 `@throws` tags silently.
+`D_dokka_html` fills the jar from the HTML renderer, which renders them, so the tags now meet this
+on their own. The bullet stays; nothing pins it.
+**Enforced by.** Nothing — its tripwire was deleted along with the requirement.
+**See.** `D_dokka_html`, `D_kdoc_voice`.

@@ -37,29 +37,27 @@ either way. The javadoc format was picked for the layout other tooling expects �
 
 | | `dokkaGeneratePublicationJavadoc` | `dokkaGeneratePublicationHtml` |
 |---|---|---|
-| the 24 `@throws` tags | **0 occurrences in `ByteArraysKt.html`** | a Throws section on every accessor page |
+| the 24 `@throws` tags | **dropped — 0 occurrences in the output** | a Throws section on every accessor page |
 | `element-list`, `index-files/`, `member-search-index.js`, `package-summary.html` | yes | no |
-| `package-list` | at the jar root | at `kotlin-unsigned-jvm/package-list` |
-| search | javadoc's | Dokka's own (`scripts/pages.json`) |
+| `package-list` | at the jar root | under `kotlin-unsigned-jvm/` |
+
+`@param` and `@return` survive both, so the tag is the only casualty — the fault is in the renderer,
+which JetBrains ship separately and label Alpha
+([Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602), and #2262 for the shape of it).
 
 The layout it buys is worth nothing *here*. It serves Java tooling, and this library is barely
 callable from Java at all: every unsigned accessor returns a value class, so the JVM names are
 mangled. Kotlin consumers read the published **sources jar** in the IDE; javadoc.io serves either
 tree; nothing links to us with `-link`. What it costs is the bounds contract on 24 of 26 public
-functions — see the renderer probe under `D_kdoc_voice`, and
-[Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602). HTML is also the format JetBrains
-actually maintain; the javadoc one is the separately-shipped Alpha, and #4602 is what that looks
-like from the outside.
+functions.
 
 **Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the
 task to look at is `dokkaGeneratePublicationHtml`.
 
 **Consequences.** `R_bounds_contract_published` and its tripwire are retired: the tags now reach the
-jar on their own. The `Endian` class doc keeps its out-of-range prose bullet — a contract shared by
-every accessor belongs on the class doc regardless — but it is no longer the only statement of that
-contract in the published artifact, so nothing pins it. A consumer wanting javadoc `-link` against
-this library would have to point at `kotlin-unsigned-jvm/package-list` and would still get no
-`element-list`; that is accepted.
+jar on their own, so nothing pins the `Endian` class doc's out-of-range prose bullet — which stays,
+because a contract shared by every accessor belongs on the class doc regardless. Anyone wanting
+javadoc `-link` against this library is worse off, per the table; accepted.
 
 ## D_kdoc_voice — KDoc is written for this API, not transcribed from Dart; contracts go in prose (2026-09-12)
 
@@ -93,53 +91,18 @@ is the library's whole pitch; mimicking its *prose* imports the limits of Dart's
 documentation for a language that does not share them. The API names still match, which is what a
 porter actually greps for.
 
-### The `@throws` problem, and why the tags stay
+### The bounds contract: `@throws` tags, not prose
 
-`ByteArrays.kt` documents the bounds contract with `@throws`, and for a while **that tag did not
-reach the published javadoc jar.** Keeping it anyway was deliberate; `D_dokka_html` has since
-changed the renderer, and the tags now render there too.
+`ByteArrays.kt` documents the bounds contract with `@throws` — a documented KDoc block tag, listed
+in [Kotlin's KDoc reference](https://kotlinlang.org/docs/kotlin-doc.html), which Dokka parses
+correctly. It was contested only because the renderer then filling the published jar dropped it
+silently; `D_dokka_html` has the measurement, and swapped the renderer.
 
-`@throws` (with its alias `@exception`) is a documented KDoc block tag, listed in
-[Kotlin's KDoc reference](https://kotlinlang.org/docs/kotlin-doc.html), and Dokka parses it
-correctly. Exactly one renderer discards it, established by probing a marker through both rather
-than by assuming:
-
-| Probe marker in | `dokkaGeneratePublicationHtml` | `dokkaGeneratePublicationJavadoc` |
-|---|---|---|
-| `@param` | renders | renders |
-| `@return` | renders | renders |
-| `@throws` | renders | **dropped — the words "Throws" and "Bounds" appear nowhere in the output** |
-
-So the fault is in the **javadoc output plugin**, not in the tag and not in Dokka's model. JetBrains
-label that format Alpha and "for the most part a lookalike"; silently losing unsupported tags is a
-known shape of it ([Kotlin/dokka#2262](https://github.com/Kotlin/dokka/issues/2262)). We meet it
-only because `D_dokka_javadoc` chose the javadoc format over HTML. Reported upstream as
-[Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602) — **check its status before
-re-litigating any of this.**
-
-**Rejected: dropping the tag and writing the clause in prose on each function.** Prose renders in
-both places, so it looked strictly better — until two facts landed. The build publishes a **sources
-jar** (`withSourcesJar()`), and for a Kotlin consumer the IDE reading that jar is the *primary*
-documentation channel, where `@throws` renders properly as a Throws section; the javadoc jar is
-mostly Central's checkbox plus javadoc.io browsing. And a tripwire banning a standard language tag,
-permanently, to route around someone else's Alpha renderer is a bad trade for a cosmetic gain.
-
-**The mitigation instead:** the `Endian` class doc states the out-of-range contract in prose, which
-*does* render, so the published artifact states it once rather than nowhere — pinned by
-`R_bounds_contract_published` / `T_endian_states_bounds`, because that bullet now looks redundant
-next to 24 tags and is exactly what a tidy-up would delete. The residual cost is real and accepted:
-someone reading `ByteArray.getInt` on javadoc.io sees no bounds contract on that page and must
-click through to `Endian`.
-
-**Rejected: publishing Dokka's HTML output in the javadoc jar.** It would fix this outright — the
-jar keeps its name and classifier either way, and Central never looks inside — but measuring it
-showed the trade is a swap, not a win: HTML renders `@throws` and keeps `package-list`, while losing
-`element-list` and the javadoc-shaped `index-files/` and `member-search-index.js` that are the whole
-reason `D_dokka_javadoc` picked this format. Not worth reversing a recent, deliberate decision for.
-
-**Revisit when [Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602) is fixed** — re-run
-the probe; if `@throws` renders, the `Endian` prose bullet can shed its load-bearing role and
-`T_endian_states_bounds` can go.
+**Rejected: dropping the tag and writing the clause in prose on each function.** While that renderer
+was in use, prose was the only form that reached every channel, which looked strictly better. But
+banning a standard language tag permanently — with a tripwire, no less — to route around one broken
+renderer is the wrong component to change, and the **sources jar** (`withSourcesJar()`), which is
+the primary documentation channel for a Kotlin consumer's IDE, rendered the tag correctly all along.
 
 **Consequences.** `Endian`'s members are deliberately no longer standalone — they lean on the class
 doc for the shared contract, which is the skill's rule and a reversal of the "complete standalone"
@@ -329,7 +292,7 @@ map and the doc map, under the 34 KB cap its header states.
 
 The assembled picture is **`architecture.md`, a description**: `kotlin { explicitApi() }` forces a
 KDoc block on every public declaration and Dokka publishes those blocks as the `-javadoc.jar`
-(`D_dokka_javadoc`), so per-symbol truth is complete in the source. When `architecture.md` and the
+(`D_dokka_html`), so per-symbol truth is complete in the source. When `architecture.md` and the
 code disagree, the file is what gets fixed.
 
 **Rejected: keeping the rationale in `AGENTS.md`.** It is loaded on every turn; the `D_varhandle`
@@ -381,7 +344,7 @@ either way. That count is 14 as of `D_varhandle`, which added an `EndianKt.class
 `VarHandle` fields — `Endian.kt` had no top-level declarations before, so no file class was emitted.
 
 The `javadoc` task used to hit the same error for the same reason; that is now moot, since it no longer runs
-at all — see `D_dokka_javadoc`.
+at all — see `D_dokka_html`.
 
 ## D_varhandle — `Endian` reads and writes through byte-array-view `VarHandle`s (2026-09-12)
 
@@ -425,29 +388,6 @@ measurable. The cleanup is worth having only if the `VarHandle`s are ever backed
 The cost is that `Endian.kt` now names a JVM API, where before all three source files were pure Kotlin. That
 demotes a hypothetical multiplatform port from a file move to a `jvmMain` actual over a shift-or `commonMain`
 fallback, and is one of the three costs weighed in `D_jvm_only`.
-
-## D_dokka_javadoc — Dokka fills the javadoc jar; the `javadoc` task is disabled (2026-09-12)
-
-**Status:** Shipped 2026-09-12 (`6d611c1`).
-
-Maven Central requires a `-javadoc.jar`. The stock `javadoc` task cannot produce one here: it reads Java
-sources, and this library has none but `module-info.java` — which it rejected with the same "package is empty"
-error as `D_patch_module`. That error was muted with `isFailOnError = false`, so the build stayed green while
-every release from the start shipped a `-javadoc.jar` containing nothing but a manifest. Nobody noticed,
-because nothing fails when API docs are missing — it just makes the library worse to use.
-
-`build.gradle.kts` now applies `org.jetbrains.dokka` + `org.jetbrains.dokka-javadoc`, disables `javadoc`
-outright, and fills the jar from `dokkaGeneratePublicationJavadoc`. `withJavadocJar()` is deliberately kept:
-it registers the `javadocElements` variant, so the Gradle module metadata still advertises the jar.
-
-**Why the `javadoc` *format*, not Dokka's default HTML.** Both would satisfy Central, which only checks that a
-signed `-javadoc.jar` exists and never looks inside. The javadoc format is chosen because it keeps the layout
-consumers' tooling expects — `element-list`, `package-list`, `package-summary.html`, `index-files/`,
-`member-search-index.js` — so IDE "external documentation" links and `@link`-style cross-references from other
-projects resolve. Dokka's HTML format is prettier but is not a drop-in for that.
-
-**Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the task to look
-at is `dokkaGeneratePublicationJavadoc`.
 
 ## D_jvm_only — stay JVM-only; multiplatform is deferred, not foreclosed (2026-09-12)
 

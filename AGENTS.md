@@ -87,10 +87,6 @@ project needs nothing from them.*
   NaN to the canonical pattern, which is non-conformance for every format that specifies bits — and
   the swap is invisible under test, because `kotlin.test.expect` canonicalizes too. Assert NaNs via
   `.toRawBits()`. See `R_no_nan_canonicalization`, `D_float_raw_bits`.
-- **`Endian`'s class doc states the out-of-range contract in prose; don't delete it as "covered by
-  the `@throws` tags".** Dokka's *javadoc* renderer — the one that fills the published jar — silently
-  drops `@throws`, so that bullet is the only statement of the contract that reaches users of the
-  jar. See `R_bounds_contract_published`, `D_kdoc_voice`.
 - **The JPMS module name, its `exports` and the `--patch-module` argument all name
   `com.github.mvysny.unsigned`.** When they drift javac says "package is empty or does not exist",
   and the tempting fix is an empty `Dummy.java` — which lies. See `R_module_package_sync`,
@@ -129,7 +125,7 @@ Single source set; no nested `AGENTS.md`. One line per file:
   (`exceptionFormat = FULL`); no need for `--info` / `--stacktrace`.
 - `./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest$Little*'` — one nested class;
   `…PartsTest$UShort.hibyte` — one method.
-- `./gradlew dokkaGeneratePublicationJavadoc` — API docs into `build/dokka/javadoc/`.
+- `./gradlew dokkaGeneratePublicationHtml` — API docs into `build/dokka/html/`; this fills the published jar.
 - `design/verify_design_tripwires.sh && design/verify_project_tripwires.sh` — the doc-layer and
   project tripwires.
 - CI (`.github/workflows/gradle.yml`) runs `./gradlew clean build` on JDK 17/21/24 × Linux/macOS/
@@ -145,9 +141,9 @@ Single source set; no nested `AGENTS.md`. One line per file:
 
 ## Working on this codebase
 
-- **Don't re-enable the `javadoc` task.** It has nothing to read but `module-info.java` and
-  rejects it; an empty `-javadoc.jar` fails nothing and shipped unnoticed for every release before
-  0.4. If the jar comes up empty, look at `dokkaGeneratePublicationJavadoc`. See
-  `R_javadoc_jar_has_docs`, `D_dokka_javadoc`.
+- **Don't re-enable the `javadoc` task, and don't switch the jar back to Dokka's *javadoc* format.**
+  The task has nothing to read but `module-info.java`; the javadoc renderer drops all 24 `@throws`
+  tags. Either way the jar ships broken and nothing fails. See `R_javadoc_jar_has_docs`,
+  `D_dokka_html`.
 - **`bin/`, `.classpath`, `.project`, `.settings/`** are Eclipse/Buildship output and **`build/`,
   `.gradle/`** are Gradle output — all git-ignored, none of them sources. Ignore them when searching.

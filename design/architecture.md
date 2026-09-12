@@ -45,8 +45,8 @@ silently on the way down.
 and would reject its `exports` as an empty package, so `build.gradle.kts` hands javac
 `--patch-module com.github.mvysny.unsigned=<kotlin output>`. All three spellings of the package
 must match (`R_module_package_sync`, `D_patch_module`). The `-javadoc.jar` is filled from
-`dokkaGeneratePublicationJavadoc`, never from the `javadoc` task, which is disabled
-(`R_javadoc_jar_has_docs`, `D_dokka_javadoc`).
+`dokkaGeneratePublicationHtml`, never from the `javadoc` task, which is disabled
+(`R_javadoc_jar_has_docs`, `D_dokka_html`).
 
 ## Where to start reading
 
