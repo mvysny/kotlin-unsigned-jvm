@@ -14,6 +14,82 @@ what the alternatives do (`comparison.md`).
 
 ---
 
+## D_no_unit_scaling — the API stops at the bit pattern; scale, offset and units are the caller's (2026-09-12)
+
+**Status:** Accepted 2026-09-12.
+
+Surveying how binary formats carry a physical quantity turns up two industries answering two
+different questions. *"How do I serialize a float"* is answered overwhelmingly by IEEE-754 — the raw
+binary32 / binary64 pattern, byte order the only free variable — in CBOR, MessagePack, Thrift,
+Protobuf, Avro, BSON, WAV float PCM, Parquet and numpy alike. *"How do I serialize a voltage"* is
+answered just as overwhelmingly by **scaled integers**: Renogy's ÷100, CAN / OBD-II's per-PID
+scale-and-offset, most of IEC 61850, most sensor BLE. Embedded designers avoid floats because the MCU
+may have no FPU, and because `2560` is exact where `25.6f` is not. This library's own origin — driving
+a Renogy Rover over Modbus RTU — used no floats at all.
+
+So the library's accessors return and accept **the bit pattern the wire carries**, nothing more. A
+caller who wants volts writes `bytes.getUShort(4, Endian.Little).toInt() / 100.0`, and that division
+is the entirety of what a scaling API would do for them.
+
+**Rejected: a scaled accessor** — `getScaled(byteOffset, scale, offset)`, or a `Scale` parameter
+alongside `endian`. To be worth more than the division it replaces it would have to carry the
+metadata that makes scaling meaningful: which field uses which scale, the zero offset, the unit,
+saturation behaviour at the type's edge, and whether the raw field is signed. That is a description
+of one device's register map; it belongs in the driver that owns the map. The division is already the
+most readable line in such a driver, and it is the one place the unsigned types earn their keep —
+`0xFFFF / 100.0` is `655.35` through `UShort` and `-0.01` through `Short`.
+
+**Rejected: reading this as an argument against IEEE-754 accessors.** The finding says scaled
+integers are what sensor protocols actually use, so floats are not where this library's *demand*
+lies. It does not say byte-level float accessors are wrong to have — a format that does use IEEE-754
+still needs its four or eight bytes turned into a number, which is exactly this library's job.
+
+**Consequences.** "Why doesn't this have `getScaled`?" resolves here. A protocol-specific helper
+belongs in a protocol-specific library that depends on this one.
+
+## D_no_float16 — no half-precision accessors: not binary16, not bfloat16 (2026-09-12)
+
+**Status:** Accepted 2026-09-12; the JDK-baseline argument below expires on its own, the other two
+do not.
+
+"Float16" is **IEEE-754 binary16** (standardised 2008) — the same anatomy as `Float` with smaller
+fields, and therefore the same exponent-bias scheme, subnormals, infinities and NaN encodings:
+
+| | sign | exponent | mantissa | bias | max finite | smallest normal | ~decimal digits |
+|---|---|---|---|---|---|---|---|
+| binary16 (half) | 1 | 5 | 10 | 15 | 65504 | 6.10 × 10⁻⁵ | ~3.3 |
+| binary32 (`Float`) | 1 | 8 | 23 | 127 | 3.40 × 10³⁸ | 1.18 × 10⁻³⁸ | ~7.2 |
+| binary64 (`Double`) | 1 | 11 | 52 | 1023 | 1.80 × 10³⁰⁸ | 2.23 × 10⁻³⁰⁸ | ~15.9 |
+| bfloat16 | 1 | 8 | 7 | 127 | 3.39 × 10³⁸ | 1.18 × 10⁻³⁸ | ~2.4 |
+
+Practically: ~3 significant decimal digits, overflowing to infinity above 65504 — fine for a
+temperature or a normalised colour, useless for a distance in millimetres. You meet it in CBOR (major
+type 7, additional info 25), OpenEXR, GPU texture and vertex data, ML model files, occasionally a
+sensor payload.
+
+**Rejected: `getFloat16` / `setFloat16`.** Three reasons, and only one of them ages:
+
+* **No Kotlin type to name it after.** It would have to return `Float`, and the whole API is named
+  after the Kotlin type it hands back — `getInt`, not `getInt32`. A `getFloat16` returning a `Float`
+  is the first accessor whose name describes the wire rather than the return type.
+* **No JDK help at this baseline.** JDK 20 added `Float.float16ToFloat(short)` /
+  `floatToFloat16(float)`; this library targets 17 (and CI runs 17/21/24), so it would be ~20
+  hand-rolled lines whose subnormal and overflow edges would be the only real correctness risk in the
+  whole float story — everything else here is delegation to code the JDK already tests.
+* **The name is ambiguous in this library's own domain.** Bluetooth LE's health and battery profiles
+  define `SFLOAT`: also 16 bits, but a 4-bit *decimal* exponent plus a 12-bit mantissa — scaled-integer
+  thinking (`D_no_unit_scaling`), not IEEE. Someone doing sensor work who sees `getFloat16` may well
+  expect that one.
+
+**Rejected: bfloat16.** The confusable sibling — binary32 with the low 16 mantissa bits chopped off,
+keeping the *range* and discarding the *precision*, so conversion to and from `Float` is a shift
+rather than an algorithm. It exists for machine learning and is met nowhere else; none of the formats
+this library targets carry it.
+
+**Consequences.** If this is ever revived — CBOR is the likeliest trigger — it gets its own idea file,
+and the name to reach for is `getHalf` / `setHalf`: it sidesteps the `SFLOAT` collision and reads as a
+width rather than as a claim about the return type.
+
 ## D_design_docs — Adopt the `design/` doc layer, with `architecture.md` as the assembled picture (2026-09-12)
 
 **Status:** Accepted; installed 2026-09-12.

@@ -120,8 +120,8 @@ That's ~8 functions plus KDoc. No new byte-shuffling logic, so the existing `End
   superiority over Dart: `ByteData.setFloat32` *has* to take a `double` and narrow silently, since
   Dart has no `float` type.
 
-- **Half-precision (`Float16`)?** No — see [Float16](#float16) below. If it ever comes up it's its
-  own idea file, and `getHalf` is a better name than `getFloat16`.
+- **Half-precision (`Float16`)?** No — declined and graduated: `D_no_float16`. Nothing about the
+  binary32/binary64 accessors depends on that answer.
 
 ## Testing
 
@@ -165,53 +165,20 @@ Note the KT-4749 wrinkle from AGENTS.md applies to the negative-signed double pa
 
 ## Is this actually our gap?
 
-Your Renogy observation is the real insight here and belongs in the record: **"how do I serialize a
-float" and "how do I serialize a voltage" are different questions with different industry answers.**
+The Renogy observation behind this question has graduated on its own: **"how do I serialize a float"
+and "how do I serialize a voltage" are different questions with different industry answers**, and
+the second one is answered by scaled integers, not by IEEE-754. That finding, and the decision that
+scaling stays out of this library entirely, are `D_no_unit_scaling`.
 
-IEEE-754 wins the first, overwhelmingly (table above). *Scaled integers* win the second, also
-overwhelmingly — Renogy's ÷100, CAN/OBD-II's per-PID scale-and-offset, most of IEC 61850, most sensor
-BLE. Embedded designers avoid floats because the MCU may have no FPU and because `2560` is exact
-where `25.6f` is not. This library's origin — talking to a Renogy Rover — used no floats at all.
-
-So design/comparison.md's "most obvious real gap" is true as *feature-matrix* criticism, and a reviewer
-comparing us to `ByteBuffer` will notice. It is not evidence that users want floats. The current doc
-slightly conflates the two claims; fix that wording on graduation.
+What it leaves for *this* idea is the honesty clause. design/comparison.md's "most obvious real gap"
+is true as *feature-matrix* criticism — a reviewer comparing us to `ByteBuffer` will notice, and the
+README currently has to concede the point mid-argument. It is not evidence that users are asking for
+floats. The multiplatform idea had exactly the same character and was declined for it (`D_jvm_only`);
+the difference in this one's favour is purely cost. The current doc wording slightly conflates
+"cited gap" with "wanted feature"; fix that on graduation.
 
 Still worth adding: eight functions, no new logic, closes a cell, completes the `ByteData` parity the
 README already claims.
-
-## Float16
-
-"Float16" is **IEEE-754 binary16** (standardised 2008) — same anatomy as `Float`, smaller fields:
-
-| | sign | exponent | mantissa | bias | max finite | smallest normal | ~decimal digits |
-|---|---|---|---|---|---|---|---|
-| binary16 (half) | 1 | 5 | 10 | 15 | 65504 | 6.10 × 10⁻⁵ | ~3.3 |
-| binary32 (`Float`) | 1 | 8 | 23 | 127 | 3.40 × 10³⁸ | 1.18 × 10⁻³⁸ | ~7.2 |
-| binary64 (`Double`) | 1 | 11 | 52 | 1023 | 1.80 × 10³⁰⁸ | 2.23 × 10⁻³⁰⁸ | ~15.9 |
-| bfloat16 | 1 | 8 | 7 | 127 | 3.39 × 10³⁸ | 1.18 × 10⁻³⁸ | ~2.4 |
-
-All the rules are identical — same exponent-bias scheme, same subnormals, same infinity and NaN
-encodings — there's just less room. Practically: ~3 significant decimal digits, and it overflows to
-infinity above 65504. Fine for a temperature or a normalised colour; useless for a distance in
-millimetres.
-
-`bfloat16` is the confusable sibling: binary32 with the low 16 mantissa bits chopped off, keeping the
-*range* and discarding the *precision*. Conversion to/from `Float` is a shift, not an algorithm. It
-exists for machine learning.
-
-Where you meet binary16: CBOR (major type 7, additional info 25), OpenEXR, GPU texture/vertex data,
-ML model files, occasionally sensor payloads. Where you meet bfloat16: ML only.
-
-Three reasons to skip:
-
-- **No Kotlin type.** It'd have to return `Float`, breaking the named-after-the-Kotlin-type rule.
-- **No JDK help at our baseline.** JDK 20 added `Float.float16ToFloat(short)` /
-  `floatToFloat16(float)`, but this library targets 17 — so ~20 hand-rolled lines whose subnormal and
-  overflow edges would be the only real correctness risk in the whole float story.
-- **The name is ambiguous in our own domain.** Bluetooth LE's health/battery profiles define
-  `SFLOAT` — also 16 bits, but a 4-bit *decimal* exponent plus a 12-bit mantissa: scaled-integer
-  thinking again, not IEEE. Anyone doing sensor work who sees `getFloat16` may expect that one.
 
 ## Graduation is mostly a documentation edit
 
@@ -246,5 +213,5 @@ one sentence on the raw-bits behaviour.
   (`Float32List` etc.), which are a different concept entirely and arguably out of scope.
 - Sequencing against multiplatform: moot, that one is declined (`D_jvm_only`). If it is ever revived,
   there is still no conflict — `fromBits`/`toRawBits` are common stdlib, so floats-first stays right.
-- 24-bit accessors are the *other* gap design/comparison.md names. Deliberately not this file, and there's
-  no idea file for it yet. Is it on the roadmap at all?
+- 24-bit accessors are the *other* gap design/comparison.md names. Not this file — filed separately as
+  [[24bit-accessors]], where it turns out to be a much less free change than this one.

@@ -135,5 +135,6 @@ case worth being deliberate about is 64-bit: pin `GH EF CD AB`-style vectors exp
 - Graduation would add an axis to the design/comparison.md table (`A_word_order`?) where every single
   competing row is ❌. Tempting — but only add the axis if it's a real axis and not a
   self-congratulatory one; the test is whether a reader choosing a library would weigh it.
-- Unrelated but adjacent, and also unfiled: **24-bit accessors**, the other gap design/comparison.md names
-  (Netty and korlibs both have it). Not this idea. Worth its own file if protocol work is the target.
+- Unrelated but adjacent: **24-bit accessors**, the other gap design/comparison.md names (Netty and
+  korlibs both have it). Now filed separately as [[24bit-accessors]] — and note it interacts with
+  this idea, since three bytes is not a whole number of 16-bit registers.
