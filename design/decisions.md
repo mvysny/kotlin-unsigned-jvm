@@ -45,8 +45,7 @@ would be a second description of them, and the second copy would lose.
 
 **Consequences.** Every `D_` / `R_` / `T_` slug cited anywhere must resolve —
 `design/verify_design_tripwires.sh` and `design/verify_project_tripwires.sh` check it, and CI runs
-both. The four pre-existing entries got dated headings with the backticks stripped (the tripwire
-matches `^## D_`), and their `[DECISIONS.md]` / `[COMPARISON.md]` links were swept to the new paths.
+both.
 
 ## D_patch_module — JPMS: patch the Kotlin output into the module, don't fake the package (2026-09-12)
 

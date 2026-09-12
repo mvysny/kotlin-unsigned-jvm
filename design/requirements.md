@@ -47,7 +47,6 @@ anywhere must get the same byte order everywhere, and a single overload defaulti
 would be a silent data-corruption bug at every call site that trusted the pattern. Byte-sized
 accessors take no `endian` at all, since endianness is meaningless for one byte.
 **Enforced by.** `T_endian_default_big`; `ByteArrayTest` asserts the default on each width.
-**See.** `README.md`.
 
 ## R_javadoc_jar_has_docs — The published `-javadoc.jar` contains the rendered KDoc, not just a manifest
 
