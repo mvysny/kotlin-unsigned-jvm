@@ -116,7 +116,9 @@ nexusPublishing {
 tasks.withType<Test> {
     useJUnitPlatform()
     testLogging {
-        // when the test fails, show the exception stacktrace in stdout
+        // when the test fails, show the exception stacktrace in stdout — this is what lets CI run
+        // without --info --stacktrace
         exceptionFormat = TestExceptionFormat.FULL
+        showCauses = true
     }
 }
