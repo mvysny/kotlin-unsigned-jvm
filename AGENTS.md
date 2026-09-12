@@ -18,6 +18,7 @@ Gradle wrapper, Kotlin 2.x, JDK 17+ (CI matrix: JDK 17/21/24 on Linux, macOS, Wi
 ```bash
 ./gradlew                       # defaultTasks = clean build (compiles, runs tests, builds jars)
 ./gradlew test                  # tests only
+./gradlew dokkaGeneratePublicationJavadoc      # API docs -> build/dokka/javadoc/ (fills the -javadoc.jar)
 ./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest'                 # one test class
 ./gradlew test --tests 'com.github.mvysny.unsigned.EndianTest$Little*'         # one @Nested inner class
 ./gradlew test --tests 'com.github.mvysny.unsigned.PartsTest$UShort.hibyte'    # one test method
@@ -57,7 +58,8 @@ tests express expected bytes as hex strings, so reuse these rather than building
 
 - `kotlin { explicitApi() }` is on: every public declaration needs an explicit `public` modifier and a
   return type, and (by project convention) a KDoc block. Files that use `inline` on trivial functions carry
-  `@file:Suppress("NOTHING_TO_INLINE")`.
+  `@file:Suppress("NOTHING_TO_INLINE")`. That KDoc is what Dokka renders into the published `-javadoc.jar`,
+  so it's user-facing — the stock `javadoc` task is disabled (`D_dokka_javadoc` in DECISIONS.md).
 - Default endianness is `Endian.Big` everywhere; keep that consistent when adding overloads.
 - `setShort(Int)`/`setUShort(UInt)`-style overloads that accept a wider type silently ignore the high bits.
   This is documented behaviour, not a bug.

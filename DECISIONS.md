@@ -45,7 +45,26 @@ path is what needs fixing.
 The two produce an identical jar: same 13 entries, and `jar --describe-module` reports
 `com.github.mvysny.unsigned@<version>` exporting the package and requiring `kotlin.stdlib` either way.
 
-**Not fixed by this:** the `javadoc` task still hits the same "package is empty" error, because it doesn't get
-the `--patch-module` argument. It is muted by `isFailOnError = false` in `build.gradle.kts`, and the published
-`-javadoc.jar` has therefore always been empty (manifest only). Giving javadoc a real Kotlin-aware doc tool
-(Dokka) is the fix worth making, not a second `--patch-module`.
+The `javadoc` task used to hit the same error for the same reason; that is now moot, since it no longer runs
+at all — see `D_dokka_javadoc`.
+
+## `D_dokka_javadoc` — Dokka fills the javadoc jar; the `javadoc` task is disabled
+
+Maven Central requires a `-javadoc.jar`. The stock `javadoc` task cannot produce one here: it reads Java
+sources, and this library has none but `module-info.java` — which it rejected with the same "package is empty"
+error as `D_patch_module`. That error was muted with `isFailOnError = false`, so the build stayed green while
+every release from the start shipped a `-javadoc.jar` containing nothing but a manifest. Nobody noticed,
+because nothing fails when API docs are missing — it just makes the library worse to use.
+
+`build.gradle.kts` now applies `org.jetbrains.dokka` + `org.jetbrains.dokka-javadoc`, disables `javadoc`
+outright, and fills the jar from `dokkaGeneratePublicationJavadoc`. `withJavadocJar()` is deliberately kept:
+it registers the `javadocElements` variant, so the Gradle module metadata still advertises the jar.
+
+**Why the `javadoc` *format*, not Dokka's default HTML.** Both would satisfy Central, which only checks that a
+signed `-javadoc.jar` exists and never looks inside. The javadoc format is chosen because it keeps the layout
+consumers' tooling expects — `element-list`, `package-list`, `package-summary.html`, `index-files/`,
+`member-search-index.js` — so IDE "external documentation" links and `@link`-style cross-references from other
+projects resolve. Dokka's HTML format is prettier but is not a drop-in for that.
+
+**Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the task to look
+at is `dokkaGeneratePublicationJavadoc`.

@@ -7,6 +7,8 @@ plugins {
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    id("org.jetbrains.dokka") version "2.2.0"
+    id("org.jetbrains.dokka-javadoc") version "2.2.0"
 }
 
 defaultTasks("clean", "build")
@@ -52,8 +54,15 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.withType<Javadoc> {
-    isFailOnError = false
+// `javadoc` can't read Kotlin, and would only see module-info.java — which it rejects for the same reason
+// javac would (see the --patch-module comment above). Disable it and let Dokka fill the javadoc jar instead;
+// `withJavadocJar()` above still registers the `javadocElements` variant, so the publication is unchanged.
+tasks.javadoc {
+    enabled = false
+}
+
+tasks.named<Jar>("javadocJar") {
+    from(tasks.dokkaGeneratePublicationJavadoc)
 }
 
 publishing {
