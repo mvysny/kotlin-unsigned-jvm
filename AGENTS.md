@@ -44,9 +44,11 @@ There is no linter or formatter configured.
 
 `src/main/java/`:
 
-- `module-info.java` declares the JPMS module `com.github.mvysny.unsigned`. `Dummy.java` is an intentionally
-  empty package-info-like file; it exists only so `compileJava` runs and the module descriptor gets compiled
-  (workaround for KT-55389). Do not delete it, and keep the Java package name identical to the Kotlin one.
+- `module-info.java` declares the JPMS module `com.github.mvysny.unsigned`, and is the only file here.
+  javac compiles it without seeing the Kotlin classes as part of the module, so `build.gradle.kts` passes
+  `--patch-module` pointing at the Kotlin output; without that, `exports com.github.mvysny.unsigned` fails
+  with "package is empty or does not exist". Keep the module name, the `exports`, and the `--patch-module`
+  argument in sync — all three name the same package. See `D_patch_module` in DECISIONS.md.
 
 `src/test/kotlin/TestUtils.kt` provides `ByteArray.toHex()`, `Byte.toHex()`, `String.fromHex()`; all
 tests express expected bytes as hex strings, so reuse these rather than building byte arrays by hand.

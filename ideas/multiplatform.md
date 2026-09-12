@@ -30,10 +30,11 @@ conversions. Not one JVM API is referenced in `Endian.kt`, `ByteArrays.kt` or `P
 
 The JVM-only parts are all build machinery:
 
-- `src/main/java/module-info.java` (the JPMS module) and `Dummy.java` (the KT-55389 workaround that
-  forces `compileJava` to run). Both belong to the JVM target only. Need to work out how they fit a
-  KMP `jvm()` target — this is the fiddliest part of the whole change.
-- `tasks.compileJava { options.javaModuleVersion }` in `build.gradle.kts`.
+- `src/main/java/module-info.java` (the JPMS module), which belongs to the JVM target only. Need to work
+  out how it fits a KMP `jvm()` target — this is the fiddliest part of the whole change.
+- `tasks.compileJava { options.javaModuleVersion, --patch-module }` in `build.gradle.kts`. The
+  `--patch-module` path points at `sourceSets.main.output` and would have to follow the Kotlin output
+  wherever a `jvm()` target puts it (see `D_patch_module` in DECISIONS.md).
 
 ## The artifact-naming problem — decide this first
 

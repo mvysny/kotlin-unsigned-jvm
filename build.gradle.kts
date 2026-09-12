@@ -24,8 +24,15 @@ tasks.withType<KotlinCompile> {
     }
 }
 
+// javac compiles module-info.java alone, and doesn't see the Kotlin classes as belonging to the module
+// being compiled — so `exports com.github.mvysny.unsigned` would fail with "package is empty or does not
+// exist". Patching the Kotlin output into the module fixes that. See D_patch_module in DECISIONS.md.
+val mainClassesOutput = sourceSets.main.get().output
 tasks.compileJava {
     options.javaModuleVersion = provider { version as String }
+    options.compilerArgumentProviders.add(CommandLineArgumentProvider {
+        listOf("--patch-module", "com.github.mvysny.unsigned=" + mainClassesOutput.asPath)
+    })
 }
 
 kotlin {
