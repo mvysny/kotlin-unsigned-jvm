@@ -3,12 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.4.10"
+    kotlin("jvm") version "2.4.20"
     `maven-publish`
     signing
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
     id("org.jetbrains.dokka") version "2.2.0"
-    id("org.jetbrains.dokka-javadoc") version "2.2.0"
 }
 
 defaultTasks("clean", "build")
@@ -61,8 +60,10 @@ tasks.javadoc {
     enabled = false
 }
 
+// Dokka's HTML, not its javadoc format: the javadoc renderer silently drops every @throws tag.
+// See D_dokka_html in design/decisions.md.
 tasks.named<Jar>("javadocJar") {
-    from(tasks.dokkaGeneratePublicationJavadoc)
+    from(tasks.dokkaGeneratePublicationHtml)
 }
 
 publishing {

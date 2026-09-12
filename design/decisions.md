@@ -14,6 +14,53 @@ what the alternatives do (`comparison.md`).
 
 ---
 
+## D_dokka_html — Dokka's HTML fills the javadoc jar; the `javadoc` task is disabled (2026-09-12)
+
+**Status:** Shipped 2026-09-12.
+
+Maven Central requires a `-javadoc.jar`. The stock `javadoc` task cannot produce one here: it reads
+Java sources, and this library has none but `module-info.java` — which it rejects with the same
+"package is empty" error as `D_patch_module`. That error was once muted with `isFailOnError = false`,
+so the build stayed green while every release up to 0.4 shipped a `-javadoc.jar` containing nothing
+but a manifest. Nobody noticed, because nothing fails when API docs are missing — it just makes the
+library worse to use. So `build.gradle.kts` applies `org.jetbrains.dokka`, disables `javadoc`
+outright, and fills the jar from `dokkaGeneratePublicationHtml`. `withJavadocJar()` is deliberately
+kept: it registers the `javadocElements` variant, so the Gradle module metadata still advertises the
+jar.
+
+**Rejected: Dokka's `javadoc` output format** (`org.jetbrains.dokka-javadoc`), which this project
+shipped first and used until this entry reversed it. Both formats satisfy Central, which only checks
+that a signed `-javadoc.jar` exists and never looks inside; the jar keeps its name and classifier
+either way. The javadoc format was picked for the layout other tooling expects — `element-list`,
+`package-summary.html`, `index-files/`, `member-search-index.js` — so that javadoc `-link` and IDE
+"external documentation" resolve against it. Rendering both and diffing them showed what that costs:
+
+| | `dokkaGeneratePublicationJavadoc` | `dokkaGeneratePublicationHtml` |
+|---|---|---|
+| the 24 `@throws` tags | **0 occurrences in `ByteArraysKt.html`** | a Throws section on every accessor page |
+| `element-list`, `index-files/`, `member-search-index.js`, `package-summary.html` | yes | no |
+| `package-list` | at the jar root | at `kotlin-unsigned-jvm/package-list` |
+| search | javadoc's | Dokka's own (`scripts/pages.json`) |
+
+The layout it buys is worth nothing *here*. It serves Java tooling, and this library is barely
+callable from Java at all: every unsigned accessor returns a value class, so the JVM names are
+mangled. Kotlin consumers read the published **sources jar** in the IDE; javadoc.io serves either
+tree; nothing links to us with `-link`. What it costs is the bounds contract on 24 of 26 public
+functions — see the renderer probe under `D_kdoc_voice`, and
+[Kotlin/dokka#4602](https://github.com/Kotlin/dokka/issues/4602). HTML is also the format JetBrains
+actually maintain; the javadoc one is the separately-shipped Alpha, and #4602 is what that looks
+like from the outside.
+
+**Don't re-enable `javadoc`.** It has nothing to read. If the jar ever comes up empty again, the
+task to look at is `dokkaGeneratePublicationHtml`.
+
+**Consequences.** `R_bounds_contract_published` and its tripwire are retired: the tags now reach the
+jar on their own. The `Endian` class doc keeps its out-of-range prose bullet — a contract shared by
+every accessor belongs on the class doc regardless — but it is no longer the only statement of that
+contract in the published artifact, so nothing pins it. A consumer wanting javadoc `-link` against
+this library would have to point at `kotlin-unsigned-jvm/package-list` and would still get no
+`element-list`; that is accepted.
+
 ## D_kdoc_voice — KDoc is written for this API, not transcribed from Dart; contracts go in prose (2026-09-12)
 
 **Status:** Shipped 2026-09-12.
