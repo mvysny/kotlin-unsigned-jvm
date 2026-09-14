@@ -129,13 +129,13 @@ case worth being deliberate about is 64-bit: pin `GH EF CD AB`-style vectors exp
   as `Q_word_order` (a `D_` entry in design/decisions.md on graduation) either way, because "why does `Endian` have four values?" is a
   question someone will ask in three years.
 - Is this a better use of effort than the float accessors were? It's ~60 lines against ~8 functions,
-  it serves the domain the library was actually built for, and no competitor in design/comparison.md has it
+  it serves the domain the library was actually built for, and no competitor in design/research.md has it
   either — not `ByteBuffer`, not korlibs, not kotlinx-io. Netty doesn't have it. That's an *empty*
   cell in the comparison table rather than a cell where we're behind, which is a different and
   arguably better kind of win.
-- Graduation would add an axis to the design/comparison.md table (`A_word_order`?) where every single
+- Graduation would add an axis to the design/research.md matrix (`R_survey_matrix`) where every single
   competing row is ❌. Tempting — but only add the axis if it's a real axis and not a
   self-congratulatory one; the test is whether a reader choosing a library would weigh it.
-- Unrelated but adjacent: **24-bit accessors**, the other gap design/comparison.md names (Netty and
+- Unrelated but adjacent: **24-bit accessors**, the other gap design/research.md names (Netty and
   korlibs both have it). Now filed separately as [[24bit-accessors]] — and note it interacts with
   this idea, since three bytes is not a whole number of 16-bit registers.

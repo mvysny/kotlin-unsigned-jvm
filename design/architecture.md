@@ -1,16 +1,13 @@
 # Architecture
 
-The bird's-eye map of the code as it is: the major pieces, how they are wired, and the flows that
-cross several of them. **The code and its KDoc are the authority; this file describes them.** When
-they disagree, fix this file.
-
-Keep it short. Anything true of one function belongs in that function's KDoc — which
-`explicitApi()` requires and Dokka publishes — not here. This file holds only what no single symbol
-can: the direction of delegation, how the JPMS module is assembled out of two source sets, and
-where a newcomer should start reading. Cite `R_` for a promise and `D_` for why; argue nothing here.
-**The first entry in each section is the ruler** — later entries are trimmed to its length, never
-the other way round. The module map — one line per file — is in `AGENTS.md`, because an agent needs
-it every turn.
+How the pieces compose — what no single symbol can say: the direction of delegation, how the JPMS
+module is assembled out of two source sets, and where a newcomer should start reading.
+**Normative: the code conforms.** Change this file first, then the code. Not here: why
+(`decisions.md` — cite the `D_`), what the alternatives do (`research.md` — cite the `R_`), one
+function's behaviour (its KDoc, which `explicitApi()` requires and Dokka publishes), the module map
+(`AGENTS.md`, because an agent needs it every turn). **The first entry in each section is the
+ruler** — later entries are trimmed to its length. Cap 12 KB — over it, research or KDoc content has
+crept in.
 
 ---
 
@@ -19,7 +16,8 @@ it every turn.
 - Delegation points one way and never back: `ByteArrays.kt` → `Endian` → a `VarHandle`. Nothing in
   `Endian.kt` knows the `ByteArray` extension API exists.
 - `ByteArrays.kt` holds no logic at all — every function is a one-line `inline` delegate that picks
-  the `Endian` method and supplies `Endian.Big` as the default (`R_endian_defaults_big`).
+  the `Endian` method and supplies `Endian.Big` as the default (the *`endian` is an ordinary
+  argument* promise).
 - `Endian`'s two constants override exactly six primitives (`get`/`set` × short/int/long, the
   `set`s taking `Int`/`Long`). Every other accessor on the enum — the unsigned ones, the
   `Short`-typed `setShort`, the float ones — is a non-abstract `inline` wrapper that converts and
@@ -27,7 +25,7 @@ it every turn.
 - The float accessors are pure reinterpretation on top of that: `getFloat`/`setFloat` wrap
   `getInt`/`setInt` through `Float.fromBits`/`toRawBits` (`getDouble`/`setDouble` likewise over
   `getLong`/`setLong`), so no byte shuffling is float-aware and neither enum constant mentions them.
-  `toRawBits` and not `toBits` (`R_no_nan_canonicalization`, `D_float_raw_bits`).
+  `toRawBits` and not `toBits` (the *bits are never rewritten* promise, `D_float_raw_bits`).
 - The six `VarHandle`s are file-private top-level `val`s, deliberately outside the enum
   (the `AGENTS.md` invariant, `D_varhandle`). They are the only JVM-specific code in the library.
 - Byte-sized accessors (`getByte`/`setByte`/`getUByte`/`setUByte`) and `Parts.kt` bypass `Endian`

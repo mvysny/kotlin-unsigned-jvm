@@ -6,7 +6,7 @@ adjacent" note.
 
 ## The gap
 
-design/comparison.md names it as one of this library's two gaps: **Netty** (`getMedium` /
+design/research.md names it as one of this library's two gaps: **Netty** (`getMedium` /
 `getUnsignedMedium` / `setMedium`, both endians) and **korlibs** both have 24-bit access; we don't,
 and neither does `ByteBuffer`, `MemorySegment`, `DataInputStream`, kotlinx-io or Okio. So this is a
 half-empty cell rather than a cell where we are behind everybody — a different, arguably better kind

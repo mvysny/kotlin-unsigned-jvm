@@ -1,26 +1,31 @@
 #!/usr/bin/env bash
-# Checks that the design/ doc layer is consistent (the layout is described in AGENTS.md, "Design docs"):
-#   - every cited decision / requirement slug has its "## " heading in design/
-#   - the root AGENTS.md is under 34 KB and every nested AGENTS.md under 10 KB (loaded on every turn)
-#   - every CLAUDE.md is exactly the "@AGENTS.md" shim, and one sits beside every AGENTS.md
-#   - every cited T_ tripwire slug has a check in a tripwire script, and every check is cited
-#   - design/ holds decisions.md, requirements.md and exactly one of solution.md | architecture.md
-#   - no index file in design/ideas/, no legacy UPPERCASE doc files at the root
-# Run from anywhere inside the repo: design/verify_design_tripwires.sh
-# Exit 0 when green, 1 with one "tripwire:" line per failure otherwise.
+# Checks the doc layer — the files described in AGENTS.md, "Design docs" — and nothing else:
+#   - every cited D_ / R_ slug has its "## " heading in design/decisions.md / design/research.md
+#   - every "## D_" heading reads "D_<slug> — <the question>?"; decisions.md carries no
+#     "Superseded by" / "Amended by" / strikethrough / line-initial "Status:"
+#   - root AGENTS.md is under 34 KB, a nested one under 10 KB, design/architecture.md under 12 KB
+#   - every nested AGENTS.md is named in the root AGENTS.md module map
+#   - every CLAUDE.md is a symlink to AGENTS.md, and one sits beside every AGENTS.md
+#   - every line of the root AGENTS.md "What this is" section occurs verbatim in README.md
+#   - no retired doc files: root UPPERCASE docs, design/requirements.md, design/solution*.md, …
+#   - prints, without failing, the per-entry sizes of decisions.md and research.md
+# Run from anywhere inside the repo; needs bash and git. Exit 0 when green, 1 with one
+# "tripwire:" line per failure otherwise. A failure is as often a stale expectation as a real
+# violation — read the line before "fixing" the doc.
+#
+# The set of checks is closed: a project never adds one here. Rules about the project's own code
+# belong in its tests and linters, which are better at it. The checks carry no ids — each is
+# named by what it checks.
 set -euo pipefail
+export LC_ALL=C   # byte order for sort/comm, byte counts for the caps
 cd "$(git rev-parse --show-toplevel)"
 
 fail=0
 err() { printf 'tripwire: %s\n' "$*" >&2; fail=1; }
-
 DESIGN=design
-[ -d "$DESIGN" ] || { err "no $DESIGN/ folder"; exit 1; }
 
-# Tracked text files only (grep -I skips binaries). NUL-safe.
-# Listed once, and an empty listing is a failure: a `git ls-files` that fails inside a loop below
-# — no git, an unreadable checkout — would otherwise leave every check with nothing to walk, and
-# a vacuous pass is indistinguishable from a green one.
+# Tracked files, listed once. An empty listing is a failure: a vacuous pass is indistinguishable
+# from a green one.
 files=()
 while IFS= read -r -d '' f; do files+=("$f"); done < <(git ls-files -z)
 [ "${#files[@]}" -gt 0 ] || { err "git ls-files listed nothing in $PWD"; exit 1; }
@@ -33,89 +38,103 @@ check_namespace() {
   pattern="\\b${prefix}_[a-z][a-z0-9_]*"
   cited=$(tracked | xargs -0 grep -I -o -h -E "$pattern" 2>/dev/null | sort -u || true)
   if [ ! -f "$file" ]; then
-    [ -z "$cited" ] || err "$file is missing but ${prefix}_ slugs are cited"
+    [ -z "$cited" ] || err "$file does not exist but ${prefix}_ slugs are cited: $(printf '%s ' $cited)"
     return
   fi
   defined=$(grep -o -E "^## ${prefix}_[a-z][a-z0-9_]*" "$file" | sed 's/^## //' | sort -u || true)
-  missing=$(comm -23 <(printf '%s\n' "$cited") <(printf '%s\n' "$defined") | sed '/^$/d')
+  missing=$(comm -23 <(printf '%s\n' "$cited") <(printf '%s\n' "$defined") | sed '/^$/d' || true)
   for slug in $missing; do
     err "\`$slug\` is cited but has no '^## $slug' heading in $file"
   done
 }
 check_namespace D "$DESIGN/decisions.md"
-check_namespace R "$DESIGN/requirements.md"
+check_namespace R "$DESIGN/research.md"
 
-# --- mandatory files, exactly one assembled picture ----------------------------
-[ -f "$DESIGN/decisions.md" ]    || err "$DESIGN/decisions.md is missing"
-[ -f "$DESIGN/requirements.md" ] || err "$DESIGN/requirements.md is missing"
-n=0
-[ -f "$DESIGN/solution.md" ]     && n=$((n + 1))
-[ -f "$DESIGN/architecture.md" ] && n=$((n + 1))
-[ "$n" -eq 1 ] || err "$DESIGN/ must hold exactly one of solution.md | architecture.md (found $n)"
+# --- decisions.md: every heading is a question; answers are rewritten, never amended ---------
+if [ -f "$DESIGN/decisions.md" ]; then
+  while IFS= read -r line; do
+    printf '%s\n' "$line" | grep -q -E '^## D_[a-z][a-z0-9_]* — .*\?$' \
+      || err "$DESIGN/decisions.md: '$line' — a heading is '## D_<slug> — <the question>?', as in '## D_<slug> — Why <this> rather than <that>?'"
+  done < <(grep -E '^## D_' "$DESIGN/decisions.md" || true)
+  while IFS= read -r hit; do
+    err "$DESIGN/decisions.md:$hit — an answer is rewritten in place; a reversal is a rewrite or a why-not question, never an amendment"
+  done < <(grep -n -E 'Superseded by|Amended by|~~|^(\*\*)?Status:' "$DESIGN/decisions.md" || true)
+fi
 
-# --- AGENTS.md is loaded every turn: cap it -----------------------------------
-# Root 34 KB; a nested one 10 KB (it loads beside the root when work touches its directory).
+# --- loaded files are capped; nested files are linked from the root map --------
 ROOT_LIMIT=$((34 * 1024))
 NESTED_LIMIT=$((10 * 1024))
+ARCH_LIMIT=$((12 * 1024))
+cap() {
+  local f=$1 limit=$2 size
+  size=$(wc -c < "$f")
+  [ "$size" -le "$limit" ] || err "$f is $size bytes; the cap is $limit — see 'Maintenance of this file' in AGENTS.md"
+}
+[ -f AGENTS.md ] || err "no root AGENTS.md"
 while IFS= read -r -d '' f; do
   case "$f" in
-    AGENTS.md)   limit=$ROOT_LIMIT ;;
-    */AGENTS.md) limit=$NESTED_LIMIT ;;
-    *) continue ;;
+    AGENTS.md) cap "$f" "$ROOT_LIMIT" ;;
+    */AGENTS.md)
+      cap "$f" "$NESTED_LIMIT"
+      if [ -f AGENTS.md ] && ! grep -q -F -- "$f" AGENTS.md; then
+        err "$f is not named in the root AGENTS.md module map — add 'Rules: $f' to its module's line"
+      fi ;;
   esac
-  size=$(wc -c < "$f")
-  [ "$size" -le "$limit" ] || err "$f is $size bytes; the cap is $limit — garbage-collect by moving, not summarising"
 done < <(tracked)
+if [ -f "$DESIGN/architecture.md" ]; then cap "$DESIGN/architecture.md" "$ARCH_LIMIT"; fi
 
-# --- every CLAUDE.md is the shim; every AGENTS.md has one beside it -----------
+# --- CLAUDE.md is a symlink to AGENTS.md, both directions ----------------------
 while IFS= read -r -d '' f; do
   case "$f" in
     CLAUDE.md|*/CLAUDE.md)
-      [ "$(cat "$f")" = "@AGENTS.md" ] || err "$f must contain exactly '@AGENTS.md'; move its content to AGENTS.md"
-      ;;
+      if ! [ -L "$f" ] || [ "$(readlink "$f")" != "AGENTS.md" ]; then
+        err "$f must be a symlink to AGENTS.md (ln -s AGENTS.md CLAUDE.md); any content moves into AGENTS.md"
+      fi ;;
     AGENTS.md|*/AGENTS.md)
-      shim="$(dirname "$f")/CLAUDE.md"
-      [ -f "$shim" ] || err "$shim is missing (the '@AGENTS.md' shim beside $f)"
-      ;;
+      link="$(dirname "$f")/CLAUDE.md"
+      [ -e "$link" ] || err "$link is missing — ln -s AGENTS.md CLAUDE.md beside $f" ;;
   esac
 done < <(tracked)
 
-# --- T_ tripwire slugs: cited from a requirement's "Enforced by", defined by a check -----------
-# A "tripwire script" is any tracked file whose path contains "tripwire", other than this one.
-# Both directions: a cited T_ with no check is a rule nobody enforces; a check nothing cites is
-# a rule nobody can find. design/ideas/ is exempt — an idea names a slug before its check exists.
-scripts=() others=()
-while IFS= read -r -d '' f; do
-  case "$f" in
-    "$DESIGN"/verify_design_tripwires.sh|"$DESIGN"/ideas/*) ;;
-    *tripwire*) scripts+=("$f") ;;
-    *) others+=("$f") ;;
-  esac
-done < <(tracked)
-tpat='\bT_[a-z][a-z0-9_]*'
-grep_slugs() { { [ "$#" -gt 0 ] && printf '%s\0' "$@" | xargs -0 grep -I -o -h -E "$tpat" 2>/dev/null | sort -u; } || true; }
-cited=$(grep_slugs "${others[@]}")
-defined=$(grep_slugs "${scripts[@]}")
-for slug in $(comm -23 <(printf '%s\n' "$cited") <(printf '%s\n' "$defined") | sed '/^$/d'); do
-  err "\`$slug\` is cited but no tripwire script defines a check for it"
-done
-for slug in $(comm -13 <(printf '%s\n' "$cited") <(printf '%s\n' "$defined") | sed '/^$/d'); do
-  err "\`$slug\` has a check but nothing cites it — cite it beside the invariant it guards, or drop the check"
-done
-
-# --- ideas/: ls is the index -------------------------------------------------
-for f in README.md readme.md INDEX.md index.md TOC.md; do
-  [ -e "$DESIGN/ideas/$f" ] && err "$DESIGN/ideas/$f: no index file — 'ls' is the index"
-done
-
-# --- migration completeness: nothing legacy left at the root -------------------
-for f in DECISIONS.md decisions.md NOTES.md RESEARCH.md SOLUTION.md SOLUTION_VERIFY.md \
-         REQUIREMENTS.md ARCHITECTURE.md DESIGN.md COMPARISON.md IDEAS.md ideas.md; do
-  [ -e "$f" ] && err "root $f should live under $DESIGN/ (lowercase)"
-done
-[ -d ideas ] && err "root ideas/ should be $DESIGN/ideas/"
-
-if [ "$fail" -eq 0 ]; then
-  echo "design tripwires: ok"
+# --- the pitch is the one sanctioned duplicate: hold it verbatim -----------------
+if [ -f AGENTS.md ] && [ -f README.md ]; then
+  body=$(awk '/^## What this is/{f=1; next} /^## /{f=0} f' AGENTS.md | sed '/^[[:space:]]*$/d')
+  if [ -z "$body" ]; then
+    err "AGENTS.md has no '## What this is' section — the README's opening, copied verbatim"
+  else
+    while IFS= read -r line; do
+      grep -q -x -F -- "$line" README.md \
+        || err "AGENTS.md 'What this is' must be a verbatim copy of README.md lines; not found there: $line"
+    done <<< "$body"
+  fi
 fi
+
+# --- retired files ----------------------------------------------------------------
+for f in DECISIONS.md decisions.md NOTES.md RESEARCH.md SOLUTION.md SOLUTION_VERIFY.md \
+         REQUIREMENTS.md ARCHITECTURE.md DESIGN.md COMPARISON.md; do
+  if [ -e "$f" ]; then err "root $f — doc files live under $DESIGN/, lowercase"; fi
+done
+if [ -e "$DESIGN/requirements.md" ]; then err "$DESIGN/requirements.md is retired — promises are AGENTS.md lines, owner-written"; fi
+if [ -e "$DESIGN/comparison.md" ]; then err "$DESIGN/comparison.md is retired — prior art is research.md"; fi
+for f in "$DESIGN"/solution.md "$DESIGN"/solution-*.md; do
+  if [ -e "$f" ]; then err "$f is retired — one normative $DESIGN/architecture.md, deliverables as sections"; fi
+done
+
+# --- per-entry sizes, informational: a reading list, not a cut list -------------
+# The first entry is the ruler; later ones land within 1-2x of it. An entry far off
+# that length is usually carrying facts that belong in research.md, or answering two
+# questions and wanting a split — neither is fixed by compressing it.
+sizes() {
+  local file=$1 prefix=$2
+  [ -f "$file" ] || return 0
+  echo "$file, bytes per entry:"
+  awk -v p="^## ${prefix}_" '
+    $0 ~ p { if (slug) printf "  %6d %s\n", n, slug; slug = $2; n = 0 }
+    { n += length($0) + 1 }
+    END { if (slug) printf "  %6d %s\n", n, slug }' "$file" | sort -rn
+}
+sizes "$DESIGN/decisions.md" D
+sizes "$DESIGN/research.md" R
+
+if [ "$fail" -eq 0 ]; then echo "design tripwires: ok"; fi
 exit "$fail"

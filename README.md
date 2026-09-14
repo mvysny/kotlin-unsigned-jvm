@@ -1,7 +1,12 @@
 # Kotlin Unsigned utilities for JVM
 
-This library mimics Dart's `ByteData` scalar accessors — every one of them — and adds the following
-extension functions:
+A tiny, dependency-free Kotlin/JVM library that mimics Dart's `ByteData`: extension functions on
+`ByteArray` that read and write signed and unsigned 8/16/32/64-bit integers and IEEE-754 floats at a
+byte offset, with explicit endianness. The JDK owns the byte shuffling (byte-array-view `VarHandle`s);
+this library owns the API shape — true Kotlin unsigned types, endianness as an ordinary parameter, no
+wrapper object.
+
+The scalar accessors are `ByteData`'s, every one of them:
 
 * `ByteArray.getByte(byteOffset)`
 * `ByteArray.setByte(byteOffset, value)`
@@ -95,7 +100,7 @@ throws in slicing, bulk copies and off-heap buffers for free. Three differences 
   instead of — the array you already have.
 
 If those three don't bother you, use `ByteBuffer`; it's free and it's in the JDK. See
-[design/comparison.md](design/comparison.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
+[design/research.md](design/research.md) for the same treatment of `VarHandle`, `MemorySegment`, kotlinx-io,
 Okio, Netty, Guava, Apache Commons and others.
 
 Not everything on that list is a competitor. kotlinx-io in particular solves a different shape of
